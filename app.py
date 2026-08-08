@@ -6,7 +6,7 @@ from datetime import datetime
 import time
 
 # ==========================================
-# 0. Page Configuration
+# 0. Page Configuration & Custom CSS
 # ==========================================
 st.set_page_config(
     page_title="One-Health Dashboard",
@@ -15,17 +15,13 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Futuristic, Ultra-Clean Dark Slate & Electric Blue UI CSS
+# Futuristic UI CSS with Status Badge Indicators & Clean Chart Tooltips
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap');
     
     * {
         font-family: 'Plus Jakarta Sans', -apple-system, sans-serif !important;
-    }
-
-    code, .stCode {
-        font-family: 'JetBrains Mono', monospace !important;
     }
 
     /* Main Container */
@@ -51,45 +47,46 @@ st.markdown("""
         font-weight: 700 !important;
     }
 
-    /* Modern Text Inputs & Sliders */
     section[data-testid="stSidebar"] .stTextInput input {
         background-color: #111827 !important;
         color: #F9FAFB !important;
         border: 1px solid #1F2937 !important;
         border-radius: 10px;
-        font-size: 0.85rem;
     }
     
-    section[data-testid="stSidebar"] .stButton button {
+    section[data-testid="stSidebar"] .stButton button,
+    section[data-testid="stSidebar"] .stDownloadButton button {
         background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%) !important;
         color: #FFFFFF !important;
         border: none !important;
         border-radius: 10px !important;
         font-weight: 600 !important;
         box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3);
-        transition: all 0.2s ease;
-    }
-    
-    section[data-testid="stSidebar"] .stButton button:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 6px 20px rgba(37, 99, 235, 0.5);
+        width: 100%;
     }
 
-    /* Glassmorphism Cards */
+    /* Glassmorphism Metric Cards */
     .metric-card {
         background: rgba(17, 24, 39, 0.7);
         backdrop-filter: blur(12px);
         border: 1px solid rgba(255, 255, 255, 0.08);
         border-radius: 16px;
-        padding: 1.4rem;
+        padding: 1.25rem;
         box-shadow: 0 8px 32px rgba(0, 0, 0, 0.37);
         transition: all 0.25s ease;
+        position: relative;
     }
     
     .metric-card:hover {
         border-color: rgba(56, 189, 248, 0.4);
-        transform: translateY(-3px);
-        box-shadow: 0 12px 40px rgba(56, 189, 248, 0.12);
+        transform: translateY(-2px);
+    }
+
+    .metric-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 0.5rem;
     }
 
     .metric-title {
@@ -98,11 +95,22 @@ st.markdown("""
         letter-spacing: 0.08em;
         color: #64748B;
         text-transform: uppercase;
-        margin-bottom: 0.5rem;
     }
 
+    /* State Badge Tag */
+    .status-tag {
+        font-size: 0.7rem;
+        font-weight: 700;
+        padding: 2px 8px;
+        border-radius: 6px;
+        letter-spacing: 0.02em;
+    }
+    .tag-good { background: rgba(16, 185, 129, 0.15); color: #34D399; border: 1px solid rgba(16, 185, 129, 0.3); }
+    .tag-moderate { background: rgba(245, 158, 11, 0.15); color: #FBBF24; border: 1px solid rgba(245, 158, 11, 0.3); }
+    .tag-danger { background: rgba(239, 68, 68, 0.15); color: #F87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+
     .metric-val {
-        font-size: 2rem;
+        font-size: 1.9rem;
         font-weight: 800;
         letter-spacing: -0.03em;
         line-height: 1.1;
@@ -112,9 +120,11 @@ st.markdown("""
         font-size: 0.78rem;
         color: #475569;
         margin-top: 0.4rem;
+        display: flex;
+        justify-content: space-between;
     }
 
-    /* Live Badge Header */
+    /* Header & Badges */
     .header-container {
         display: flex;
         align-items: center;
@@ -168,8 +178,18 @@ st.markdown("""
         border: 1px solid rgba(239, 68, 68, 0.25);
         color: #F87171;
     }
+
+    /* Hide Streamlit Element Focus Highlights and Buttons */
+    [data-testid="stHeader"] { background: transparent !important; }
+    button[title="View fullscreen"] { display: none !important; }
 </style>
 """, unsafe_allow_html=True)
+
+try:
+    with open(__file__, "r", encoding="utf-8") as f:
+        current_code = f.read()
+except Exception:
+    current_code = "# app.py source code"
 
 # ==========================================
 # 1. Sidebar Controls
@@ -194,9 +214,18 @@ with st.sidebar:
     st.markdown("---")
     sheet_url = st.text_input("Google Sheet CSV URL", value="")
     
-    if st.button("⚡ 수동 데이터 동기화"):
-        st.cache_data.clear()
-        st.rerun()
+    col_sb1, col_sb2 = st.columns(2)
+    with col_sb1:
+        if st.button("⚡ 데이터 동기화"):
+            st.cache_data.clear()
+            st.rerun()
+    with col_sb2:
+        st.download_button(
+            label="💾 app.py 받기",
+            data=current_code,
+            file_name="app.py",
+            mime="text/x-python"
+        )
 
 # ==========================================
 # 2. Calculations & Live Data Generator
@@ -230,11 +259,9 @@ def calculate_wells_riley(co2_ppm, num_people, exposure_hours, quanta_rate):
     exposure_prob = 1.0 - np.exp(-(I * p * quanta_rate * exposure_hours) / Q)
     return min(float(exposure_prob * 100.0), 99.9)
 
-# 캐시 무효화로 실시간 수신 보장
 def fetch_live_data():
     if sheet_url:
         try:
-            # cache-busting timestamp
             url_with_ts = f"{sheet_url}{'&' if '?' in sheet_url else '?'}t={int(time.time())}"
             df = pd.read_csv(url_with_ts)
             col_map = {}
@@ -250,12 +277,11 @@ def fetch_live_data():
         except Exception:
             pass
 
-    # Simulation Fallback (Dynamic Live Wave)
     t_now = time.time()
     times = pd.date_range(end=datetime.now(), periods=30, freq='1min')
-    base_co2 = 520 + 60 * np.sin(t_now / 10) + np.random.normal(0, 8, 30)
-    temp = 24.2 + 0.5 * np.cos(t_now / 20) + np.random.normal(0, 0.1, 30)
-    hum = 52.0 + 1.2 * np.sin(t_now / 15) + np.random.normal(0, 0.2, 30)
+    base_co2 = 475 + 15 * np.sin(t_now / 10) + np.random.normal(0, 5, 30)
+    temp = 24.4 + 0.3 * np.cos(t_now / 20) + np.random.normal(0, 0.1, 30)
+    hum = 52.5 + 0.8 * np.sin(t_now / 15) + np.random.normal(0, 0.2, 30)
     
     df_sim = pd.DataFrame({
         'Timestamp': times,
@@ -277,10 +303,43 @@ wells_risk = calculate_wells_riley(filtered_co2, num_people, exposure_hours, qua
 wellness_score = max(0.0, min(100.0, 100 - (filtered_co2 - 400) * 0.08))
 
 # ==========================================
-# 3. UI Content
+# 3. Status Assessment Helpers
+# ==========================================
+def get_co2_status(val):
+    if val < 800: return ("좋음", "tag-good", "#38BDF8")
+    elif val < 1000: return ("보통", "tag-moderate", "#FBBF24")
+    else: return ("나쁨", "tag-danger", "#F87171")
+
+def get_temp_status(val):
+    if 20.0 <= val <= 24.0: return ("적정", "tag-good", "#F9FAFC")
+    elif 18.0 <= val < 20.0 or 24.0 < val <= 26.0: return ("보통", "tag-moderate", "#FBBF24")
+    else: return ("부적절", "tag-danger", "#F87171")
+
+def get_hum_status(val):
+    if 40.0 <= val <= 60.0: return ("적정", "tag-good", "#60A5FA")
+    elif 30.0 <= val < 40.0 or 60.0 < val <= 70.0: return ("보통", "tag-moderate", "#FBBF24")
+    else: return ("부적절", "tag-danger", "#F87171")
+
+def get_wellness_status(val):
+    if val >= 80: return ("매우 우수", "tag-good", "#34D399")
+    elif val >= 60: return ("양호", "tag-moderate", "#FBBF24")
+    else: return ("주의 필요", "tag-danger", "#F87171")
+
+def get_risk_status(val):
+    if val < 2.0: return ("안전", "tag-good", "#34D399")
+    elif val < 5.0: return ("주의", "tag-moderate", "#FBBF24")
+    else: return ("위험", "tag-danger", "#F87171")
+
+co2_st, co2_tag, co2_clr = get_co2_status(filtered_co2)
+temp_st, temp_tag, temp_clr = get_temp_status(temp_val)
+hum_st, hum_tag, hum_clr = get_hum_status(hum_val)
+well_st, well_tag, well_clr = get_wellness_status(wellness_score)
+risk_st, risk_tag, risk_clr = get_risk_status(wells_risk)
+
+# ==========================================
+# 4. UI Rendering
 # ==========================================
 
-# Top Header Bar
 st.markdown(f"""
     <div class="header-container">
         <div>
@@ -298,7 +357,6 @@ st.markdown(f"""
     </div>
 """, unsafe_allow_html=True)
 
-# Status Banner
 if wells_risk >= 5.0 or filtered_co2 >= 1000:
     st.markdown(f"""
         <div class="status-banner status-danger">
@@ -321,58 +379,81 @@ else:
         </div>
     """, unsafe_allow_html=True)
 
-# Metric Grid
 c1, c2, c3, c4, c5 = st.columns(5)
 
 with c1:
     st.markdown(f"""
         <div class="metric-card">
-            <div class="metric-title">CO2 (KALMAN)</div>
-            <div class="metric-val" style="color: #38BDF8;">{filtered_co2:.1f} <span style="font-size: 0.8rem; color: #64748B;">ppm</span></div>
-            <div class="metric-subtext">Raw: {raw_co2:.1f} ppm</div>
+            <div class="metric-header">
+                <span class="metric-title">CO2 (KALMAN)</span>
+                <span class="status-tag {co2_tag}">{co2_st}</span>
+            </div>
+            <div class="metric-val" style="color: {co2_clr};">{filtered_co2:.1f} <span style="font-size: 0.8rem; color: #64748B;">ppm</span></div>
+            <div class="metric-subtext">
+                <span>기준: &lt; 800 ppm</span>
+                <span>Raw: {raw_co2:.1f}</span>
+            </div>
         </div>
     """, unsafe_allow_html=True)
 
 with c2:
     st.markdown(f"""
         <div class="metric-card">
-            <div class="metric-title">TEMPERATURE</div>
-            <div class="metric-val" style="color: #F9FAFC;">{temp_val:.1f} <span style="font-size: 0.8rem; color: #64748B;">°C</span></div>
-            <div class="metric-subtext">Target: 20~24°C</div>
+            <div class="metric-header">
+                <span class="metric-title">TEMPERATURE</span>
+                <span class="status-tag {temp_tag}">{temp_st}</span>
+            </div>
+            <div class="metric-val" style="color: {temp_clr};">{temp_val:.1f} <span style="font-size: 0.8rem; color: #64748B;">°C</span></div>
+            <div class="metric-subtext">
+                <span>적정 범위: 20 ~ 24°C</span>
+            </div>
         </div>
     """, unsafe_allow_html=True)
 
 with c3:
     st.markdown(f"""
         <div class="metric-card">
-            <div class="metric-title">HUMIDITY</div>
-            <div class="metric-val" style="color: #60A5FA;">{hum_val:.1f} <span style="font-size: 0.8rem; color: #64748B;">%</span></div>
-            <div class="metric-subtext">Target: 40~60%</div>
+            <div class="metric-header">
+                <span class="metric-title">HUMIDITY</span>
+                <span class="status-tag {hum_tag}">{hum_st}</span>
+            </div>
+            <div class="metric-val" style="color: {hum_clr};">{hum_val:.1f} <span style="font-size: 0.8rem; color: #64748B;">%</span></div>
+            <div class="metric-subtext">
+                <span>적정 범위: 40 ~ 60%</span>
+            </div>
         </div>
     """, unsafe_allow_html=True)
 
 with c4:
     st.markdown(f"""
         <div class="metric-card">
-            <div class="metric-title">WELLNESS SCORE</div>
-            <div class="metric-val" style="color: #34D399;">{wellness_score:.1f} <span style="font-size: 0.8rem; color: #64748B;">/100</span></div>
-            <div class="metric-subtext">Optimal Quality</div>
+            <div class="metric-header">
+                <span class="metric-title">WELLNESS SCORE</span>
+                <span class="status-tag {well_tag}">{well_st}</span>
+            </div>
+            <div class="metric-val" style="color: {well_clr};">{wellness_score:.1f} <span style="font-size: 0.8rem; color: #64748B;">/100</span></div>
+            <div class="metric-subtext">
+                <span>기준: 80점 이상 권장</span>
+            </div>
         </div>
     """, unsafe_allow_html=True)
 
 with c5:
-    risk_color = "#F87171" if wells_risk >= 5.0 else ("#FBBF24" if wells_risk >= 2.0 else "#34D399")
     st.markdown(f"""
         <div class="metric-card">
-            <div class="metric-title">INFECTION RISK</div>
-            <div class="metric-val" style="color: {risk_color};">{wells_risk:.2f} <span style="font-size: 0.8rem; color: #64748B;">%</span></div>
-            <div class="metric-subtext">Wells-Riley Model</div>
+            <div class="metric-header">
+                <span class="metric-title">INFECTION RISK</span>
+                <span class="status-tag {risk_tag}">{risk_st}</span>
+            </div>
+            <div class="metric-val" style="color: {risk_clr};">{wells_risk:.2f} <span style="font-size: 0.8rem; color: #64748B;">%</span></div>
+            <div class="metric-subtext">
+                <span>안전 기준: &lt; 2.0%</span>
+            </div>
         </div>
     """, unsafe_allow_html=True)
 
 st.markdown("<br>", unsafe_allow_html=True)
 
-# Charts Section
 g1, g2 = st.columns(2)
 
 chart_theme = dict(
@@ -385,13 +466,19 @@ chart_theme = dict(
     legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
 )
 
+plotly_clean_config = {
+    'displayModeBar': False,
+    'showAxisDragHandles': False,
+    'showAxisRangeEntryBoxes': False
+}
+
 with g1:
     st.markdown("<h4 style='font-size: 1rem; font-weight: 700; color: #E2E8F0;'>📈 CO2 Trend Analysis</h4>", unsafe_allow_html=True)
     fig_co2 = go.Figure()
     fig_co2.add_trace(go.Scatter(x=df['Timestamp'], y=df['Raw_CO2'], mode='lines', name='Raw', line=dict(color='#475569', width=1.5, dash='dot')))
     fig_co2.add_trace(go.Scatter(x=df['Timestamp'], y=df['Filtered_CO2'], mode='lines', name='Kalman Filter', line=dict(color='#38BDF8', width=3)))
     fig_co2.update_layout(**chart_theme)
-    st.plotly_chart(fig_co2, use_container_width=True)
+    st.plotly_chart(fig_co2, use_container_width=True, config=plotly_clean_config)
 
 with g2:
     st.markdown("<h4 style='font-size: 1rem; font-weight: 700; color: #E2E8F0;'>🌡️ Temp & Humidity Realtime</h4>", unsafe_allow_html=True)
@@ -399,9 +486,8 @@ with g2:
     fig_th.add_trace(go.Scatter(x=df['Timestamp'], y=df['Temperature'], mode='lines', name='Temp (°C)', line=dict(color='#F43F5E', width=2.5)))
     fig_th.add_trace(go.Scatter(x=df['Timestamp'], y=df['Humidity'], mode='lines', name='Humidity (%)', line=dict(color='#3B82F6', width=2.5)))
     fig_th.update_layout(**chart_theme)
-    st.plotly_chart(fig_th, use_container_width=True)
+    st.plotly_chart(fig_th, use_container_width=True, config=plotly_clean_config)
 
-# Auto-Refresh Loop Trigger
 if auto_refresh:
     time.sleep(refresh_sec)
     st.rerun()
