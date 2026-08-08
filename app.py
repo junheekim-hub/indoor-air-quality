@@ -3,446 +3,405 @@ import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
 from datetime import datetime
-import requests
+import time
 
 # ==========================================
 # 0. Page Configuration
 # ==========================================
 st.set_page_config(
-    page_title="Smart Classroom One-Health Dashboard",
-    page_icon="🏫",
+    page_title="One-Health Dashboard",
+    page_icon="⚡",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# Custom CSS for Modern, Clean Blue & Slate UI
+# Futuristic, Ultra-Clean Dark Slate & Electric Blue UI CSS
 st.markdown("""
 <style>
-    @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap');
     
     * {
-        font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif !important;
+        font-family: 'Plus Jakarta Sans', -apple-system, sans-serif !important;
     }
-    
-    /* Main Background */
+
+    code, .stCode {
+        font-family: 'JetBrains Mono', monospace !important;
+    }
+
+    /* Main Container */
     .stApp {
-        background-color: #0B0F19;
-        color: #F8FAFC;
+        background: #030712;
+        color: #F9FAFB;
+    }
+
+    /* Sidebar Styling */
+    section[data-testid="stSidebar"] {
+        background-color: #0B0F19 !important;
+        border-right: 1px solid #1E293B;
     }
     
-    /* Sidebar Styling & Visibility Fix */
-    section[data-testid="stSidebar"] {
-        background-color: #111827 !important;
-        border-right: 1px solid #1F2937;
-    }
     section[data-testid="stSidebar"] * {
-        color: #E2E8F0 !important;
+        color: #94A3B8 !important;
     }
+
     section[data-testid="stSidebar"] h1, 
     section[data-testid="stSidebar"] h2, 
     section[data-testid="stSidebar"] h3 {
         color: #38BDF8 !important;
+        font-weight: 700 !important;
+    }
+
+    /* Modern Text Inputs & Sliders */
+    section[data-testid="stSidebar"] .stTextInput input {
+        background-color: #111827 !important;
+        color: #F9FAFB !important;
+        border: 1px solid #1F2937 !important;
+        border-radius: 10px;
+        font-size: 0.85rem;
     }
     
-    /* Sidebar Input Fixes */
-    section[data-testid="stSidebar"] .stTextInput input {
-        background-color: #1F2937 !important;
-        color: #F8FAFC !important;
-        border: 1px solid #374151 !important;
-        border-radius: 8px;
-    }
     section[data-testid="stSidebar"] .stButton button {
         background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%) !important;
         color: #FFFFFF !important;
         border: none !important;
-        border-radius: 8px !important;
+        border-radius: 10px !important;
         font-weight: 600 !important;
-        width: 100%;
+        box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3);
         transition: all 0.2s ease;
     }
+    
     section[data-testid="stSidebar"] .stButton button:hover {
-        background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%) !important;
-        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
+        transform: translateY(-1px);
+        box-shadow: 0 6px 20px rgba(37, 99, 235, 0.5);
+    }
+
+    /* Glassmorphism Cards */
+    .metric-card {
+        background: rgba(17, 24, 39, 0.7);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 16px;
+        padding: 1.4rem;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.37);
+        transition: all 0.25s ease;
     }
     
-    /* Header Styling */
-    .header-title {
+    .metric-card:hover {
+        border-color: rgba(56, 189, 248, 0.4);
+        transform: translateY(-3px);
+        box-shadow: 0 12px 40px rgba(56, 189, 248, 0.12);
+    }
+
+    .metric-title {
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        color: #64748B;
+        text-transform: uppercase;
+        margin-bottom: 0.5rem;
+    }
+
+    .metric-val {
         font-size: 2rem;
         font-weight: 800;
-        letter-spacing: -0.02em;
-        color: #F8FAFC;
-        margin-bottom: 0.3rem;
+        letter-spacing: -0.03em;
+        line-height: 1.1;
     }
-    .header-subtitle {
-        font-size: 0.95rem;
-        color: #94A3B8;
-        margin-bottom: 1.5rem;
-    }
-    
-    /* Metric Cards */
-    .metric-card {
-        background: #111827;
-        border: 1px solid #1F2937;
-        border-radius: 12px;
-        padding: 1.25rem;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
-        transition: transform 0.2s, border-color 0.2s;
-    }
-    .metric-card:hover {
-        border-color: #3B82F6;
-        transform: translateY(-2px);
-    }
-    .metric-label {
-        font-size: 0.8rem;
-        font-weight: 700;
-        color: #94A3B8;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        margin-bottom: 0.4rem;
-    }
-    .metric-value {
-        font-size: 1.8rem;
-        font-weight: 700;
-        color: #F8FAFC;
-        line-height: 1.2;
-    }
-    .metric-sub {
+
+    .metric-subtext {
         font-size: 0.78rem;
-        color: #64748B;
-        margin-top: 0.3rem;
+        color: #475569;
+        margin-top: 0.4rem;
     }
-    
-    /* Nudge Banner */
-    .nudge-container {
-        border-radius: 12px;
-        padding: 1.2rem 1.5rem;
-        margin-bottom: 1.5rem;
+
+    /* Live Badge Header */
+    .header-container {
         display: flex;
         align-items: center;
-        gap: 1.2rem;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        justify-content: space-between;
+        margin-bottom: 1.5rem;
     }
-    .nudge-good {
-        background: rgba(16, 185, 129, 0.08);
-        border: 1px solid #10B981;
+    
+    .live-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: rgba(16, 185, 129, 0.1);
+        border: 1px solid rgba(16, 185, 129, 0.3);
+        color: #34D399;
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+
+    .live-dot {
+        width: 8px;
+        height: 8px;
+        background-color: #34D399;
+        border-radius: 50%;
+        box-shadow: 0 0 10px #34D399;
+    }
+
+    /* Banner Alerts */
+    .status-banner {
+        border-radius: 14px;
+        padding: 1rem 1.4rem;
+        margin-bottom: 1.8rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        backdrop-filter: blur(8px);
+    }
+    .status-good {
+        background: rgba(16, 185, 129, 0.06);
+        border: 1px solid rgba(16, 185, 129, 0.25);
         color: #34D399;
     }
-    .nudge-moderate {
-        background: rgba(245, 158, 11, 0.08);
-        border: 1px solid #F59E0B;
+    .status-warn {
+        background: rgba(245, 158, 11, 0.06);
+        border: 1px solid rgba(245, 158, 11, 0.25);
         color: #FBBF24;
     }
-    .nudge-warning {
-        background: rgba(239, 68, 68, 0.08);
-        border: 1px solid #EF4444;
+    .status-danger {
+        background: rgba(239, 68, 68, 0.06);
+        border: 1px solid rgba(239, 68, 68, 0.25);
         color: #F87171;
-    }
-    .nudge-icon {
-        font-size: 2.2rem;
-        line-height: 1;
-    }
-    .nudge-title {
-        font-size: 1.15rem;
-        font-weight: 700;
-        margin-bottom: 0.2rem;
-    }
-    .nudge-desc {
-        font-size: 0.88rem;
-        opacity: 0.9;
     }
 </style>
 """, unsafe_allow_html=True)
 
 # ==========================================
-# 1. Sidebar Controls (Occupancy & Config)
+# 1. Sidebar Controls
 # ==========================================
 with st.sidebar:
-    st.markdown("## ⚙️ 설정 & 파라미터")
+    st.markdown("### ⚡ Control Panel")
     st.markdown("---")
     
-    st.markdown("### 👥 교실 점유 환경")
-    num_people = st.slider("재실 인원 (명)", min_value=1, max_value=50, value=30, step=1,
-                           help="제안서 수치 기준: 학급당 약 30명")
-    
-    exposure_hours = st.slider("노출 시간 (시간)", min_value=0.5, max_value=12.0, value=6.0, step=0.5,
-                             help="일일 교실 상주 시간 (기본 6시간)")
+    st.markdown("#### 🔄 실시간 동기화 설정")
+    auto_refresh = st.checkbox("자동 데이터 새로고침 (Auto Live Sync)", value=True)
+    refresh_sec = st.slider("갱신 주기 (초)", min_value=2, max_value=30, value=5, step=1)
     
     st.markdown("---")
-    st.markdown("### 🦠 오미크론 변이 설정")
-    quanta_rate = st.slider("퀀타 방출률 (quanta/h)", min_value=500.0, max_value=2500.0, value=725.0, step=25.0,
-                            help="오미크론 변이 퀀타 방출률: 725 ~ 2,345 quanta/h")
+    st.markdown("#### 👥 교실 환경 설정")
+    num_people = st.slider("재실 인원 (명)", min_value=1, max_value=50, value=30)
+    exposure_hours = st.slider("노출 시간 (시간)", min_value=0.5, max_value=12.0, value=6.0, step=0.5)
     
     st.markdown("---")
-    sheet_url = st.text_input("Google Sheet CSV/Pub URL", 
-                              value="", 
-                              help="구글 시트 게시 URL이 설정되지 않은 경우 샘플 데이터를 시뮬레이션합니다.")
+    st.markdown("#### 🦠 오미크론 감염 모델")
+    quanta_rate = st.slider("퀀타 방출률 (quanta/h)", min_value=500.0, max_value=2500.0, value=725.0, step=25.0)
     
-    if st.button("🔄 데이터 수동 새로고침"):
+    st.markdown("---")
+    sheet_url = st.text_input("Google Sheet CSV URL", value="")
+    
+    if st.button("⚡ 수동 데이터 동기화"):
         st.cache_data.clear()
         st.rerun()
 
 # ==========================================
-# 2. Data Processing Core
+# 2. Calculations & Live Data Generator
 # ==========================================
-def apply_kalman_filter(data, process_variance=1e-3, measurement_variance=1e-1):
+def apply_kalman_filter(data):
     n_iter = len(data)
-    sz = (n_iter,)
-    xhat = np.zeros(sz)
-    P = np.zeros(sz)
-    xhatminus = np.zeros(sz)
-    Pminus = np.zeros(sz)
-    K = np.zeros(sz)
+    xhat = np.zeros(n_iter)
+    P = np.zeros(n_iter)
+    xhatminus = np.zeros(n_iter)
+    Pminus = np.zeros(n_iter)
+    K = np.zeros(n_iter)
 
     xhat[0] = data[0] if n_iter > 0 else 400.0
     P[0] = 1.0
 
     for k in range(1, n_iter):
         xhatminus[k] = xhat[k-1]
-        Pminus[k] = P[k-1] + process_variance
-        K[k] = Pminus[k] / (Pminus[k] + measurement_variance)
+        Pminus[k] = P[k-1] + 1e-3
+        K[k] = Pminus[k] / (Pminus[k] + 1e-1)
         xhat[k] = xhatminus[k] + K[k] * (data[k] - xhatminus[k])
         P[k] = (1 - K[k]) * Pminus[k]
         
     return xhat
 
-def calculate_wells_riley(co2_ppm, num_people=30.0, exposure_hours=6.0, quanta_rate=725.0):
+def calculate_wells_riley(co2_ppm, num_people, exposure_hours, quanta_rate):
     co2_diff = max(co2_ppm - 400.0, 10.0)
     Qp = (0.018 * 3600) / (co2_diff / 1e6)
     Qp = max(Qp, 5.0)
     Q = Qp * num_people
-    p = 0.54
-    I = 1.0
+    p, I = 0.54, 1.0
     exposure_prob = 1.0 - np.exp(-(I * p * quanta_rate * exposure_hours) / Q)
-    risk_pct = float(exposure_prob * 100.0)
-    return min(risk_pct, 99.9)
+    return min(float(exposure_prob * 100.0), 99.9)
 
-def calculate_wellness_score(co2, temp, humidity):
-    co2_score = max(0, 100 - (co2 - 400) * 0.08)
-    temp_score = max(0, 100 - abs(temp - 22.0) * 5)
-    hum_score = max(0, 100 - abs(humidity - 50.0) * 1.5)
-    total = co2_score * 0.5 + temp_score * 0.25 + hum_score * 0.25
-    return max(0.0, min(100.0, total))
+# 캐시 무효화로 실시간 수신 보장
+def fetch_live_data():
+    if sheet_url:
+        try:
+            # cache-busting timestamp
+            url_with_ts = f"{sheet_url}{'&' if '?' in sheet_url else '?'}t={int(time.time())}"
+            df = pd.read_csv(url_with_ts)
+            col_map = {}
+            for col in df.columns:
+                c = str(col).strip().lower()
+                if any(x in c for x in ['time', 'date', '시간', '일시']): col_map[col] = 'Timestamp'
+                elif any(x in c for x in ['raw', 'co2']): col_map[col] = 'Raw_CO2'
+                elif any(x in c for x in ['temp', '온도']): col_map[col] = 'Temperature'
+                elif any(x in c for x in ['hum', '습도']): col_map[col] = 'Humidity'
+            df = df.rename(columns=col_map)
+            df['Filtered_CO2'] = apply_kalman_filter(df['Raw_CO2'].values)
+            return df
+        except Exception:
+            pass
 
-@st.cache_data(ttl=10)
-def load_data():
-    times = pd.date_range(end=datetime.now(), periods=40, freq='2min')
-    np.random.seed(42)
-    raw_co2 = 550 + 80 * np.sin(np.linspace(0, 6, 40)) + np.random.normal(0, 15, 40)
-    temp = 26.8 + np.random.normal(0, 0.2, 40)
-    hum = 84.4 + np.random.normal(0, 0.3, 40)
+    # Simulation Fallback (Dynamic Live Wave)
+    t_now = time.time()
+    times = pd.date_range(end=datetime.now(), periods=30, freq='1min')
+    base_co2 = 520 + 60 * np.sin(t_now / 10) + np.random.normal(0, 8, 30)
+    temp = 24.2 + 0.5 * np.cos(t_now / 20) + np.random.normal(0, 0.1, 30)
+    hum = 52.0 + 1.2 * np.sin(t_now / 15) + np.random.normal(0, 0.2, 30)
     
     df_sim = pd.DataFrame({
         'Timestamp': times,
-        'Raw_CO2': raw_co2,
+        'Raw_CO2': base_co2,
         'Temperature': temp,
         'Humidity': hum
     })
-    
-    if not sheet_url:
-        df_sim['Filtered_CO2'] = apply_kalman_filter(df_sim['Raw_CO2'].values)
-        return df_sim
-        
-    try:
-        df = pd.read_csv(sheet_url)
-        col_map = {}
-        for col in df.columns:
-            c_clean = str(col).strip().lower()
-            if 'time' in c_clean or 'date' in c_clean or '일시' in c_clean or '시간' in c_clean:
-                col_map[col] = 'Timestamp'
-            elif 'raw' in c_clean or 'co2_raw' in c_clean or 'co2' in c_clean:
-                if 'Raw_CO2' not in col_map.values():
-                    col_map[col] = 'Raw_CO2'
-            elif 'filter' in c_clean or 'kalman' in c_clean:
-                col_map[col] = 'Filtered_CO2'
-            elif 'temp' in c_clean or '온도' in c_clean:
-                col_map[col] = 'Temperature'
-            elif 'hum' in c_clean or '습도' in c_clean:
-                col_map[col] = 'Humidity'
-                
-        df = df.rename(columns=col_map)
-        
-        if 'Timestamp' in df.columns:
-            def parse_korean_date(val):
-                try:
-                    val_str = str(val).strip().replace('오전', 'AM').replace('오후', 'PM')
-                    return pd.to_datetime(val_str)
-                except:
-                    return pd.NaT
-            df['Timestamp'] = df['Timestamp'].apply(parse_korean_date)
-            df = df.dropna(subset=['Timestamp']).sort_values('Timestamp')
-            
-        if 'Raw_CO2' not in df.columns and 'Filtered_CO2' in df.columns:
-            df['Raw_CO2'] = df['Filtered_CO2']
-        elif 'Raw_CO2' in df.columns and 'Filtered_CO2' not in df.columns:
-            df['Filtered_CO2'] = apply_kalman_filter(df['Raw_CO2'].values)
-            
-        if 'Temperature' not in df.columns: df['Temperature'] = 26.8
-        if 'Humidity' not in df.columns: df['Humidity'] = 84.4
-        
-        return df if not df.empty else df_sim
-    except Exception:
-        return df_sim
+    df_sim['Filtered_CO2'] = apply_kalman_filter(df_sim['Raw_CO2'].values)
+    return df_sim
 
-df = load_data()
+df = fetch_live_data()
+latest = df.iloc[-1]
+filtered_co2 = float(latest['Filtered_CO2'])
+raw_co2 = float(latest['Raw_CO2'])
+temp_val = float(latest['Temperature'])
+hum_val = float(latest['Humidity'])
 
-try:
-    latest = df.iloc[-1]
-    raw_co2_val = float(latest.get('Raw_CO2', 600.0))
-    filtered_co2_val = float(latest.get('Filtered_CO2', raw_co2_val))
-    temp_val = float(latest.get('Temperature', 26.8))
-    hum_val = float(latest.get('Humidity', 84.4))
-except Exception:
-    raw_co2_val, filtered_co2_val, temp_val, hum_val = 597.0, 608.1, 26.8, 84.4
-
-wells_riley_risk = calculate_wells_riley(filtered_co2_val, num_people, exposure_hours, quanta_rate)
-wellness_score = calculate_wellness_score(filtered_co2_val, temp_val, hum_val)
+wells_risk = calculate_wells_riley(filtered_co2, num_people, exposure_hours, quanta_rate)
+wellness_score = max(0.0, min(100.0, 100 - (filtered_co2 - 400) * 0.08))
 
 # ==========================================
-# 3. Main Dashboard UI
+# 3. UI Content
 # ==========================================
 
-# Title Banner
-st.markdown("""
-    <div>
-        <div class="header-title">🏫 Smart Classroom One-Health Platform</div>
-        <div class="header-subtitle">Data-to-Safety Pipeline | 실시간 공기질, 칼만 필터 및 Wells-Riley 오미크론 감염 위험도 대시보드</div>
-    </div>
-""", unsafe_allow_html=True)
-
-# Nudge Banner
-if wells_riley_risk >= 5.0 or filtered_co2_val >= 1000:
-    nudge_class = "nudge-warning"
-    nudge_icon = "⚠️"
-    nudge_title = "Warning: Open Windows Immediately!"
-    nudge_desc = f"오미크론 감염 위험도({wells_riley_risk:.2f}%) 및 CO2 농도({filtered_co2_val:.1f} ppm)가 높습니다. 지금 창문을 열어 환기하세요!"
-elif wells_riley_risk >= 2.0 or filtered_co2_val >= 800:
-    nudge_class = "nudge-moderate"
-    nudge_icon = "😐"
-    nudge_title = "Caution: Ventilation Recommended"
-    nudge_desc = f"공기 상태가 다소 답답합니다(감염률 {wells_riley_risk:.2f}%). 쉬는 시간에 교실 창문을 열어주세요."
-else:
-    nudge_class = "nudge-good"
-    nudge_icon = "😊"
-    nudge_title = "Optimal Air Quality & Safe Environment"
-    nudge_desc = f"쾌적하고 안전한 학습 환경입니다 (감염 위험도 {wells_riley_risk:.2f}%). 정기적인 환기를 유지해주세요."
-
+# Top Header Bar
 st.markdown(f"""
-    <div class="nudge-container {nudge_class}">
-        <div class="nudge-icon">{nudge_icon}</div>
+    <div class="header-container">
         <div>
-            <div class="nudge-title">{nudge_title}</div>
-            <div class="nudge-desc">{nudge_desc}</div>
+            <h1 style="font-size: 1.8rem; font-weight: 800; color: #F9FAFC; margin: 0; letter-spacing: -0.02em;">
+                Smart Classroom One-Health
+            </h1>
+            <p style="font-size: 0.88rem; color: #64748B; margin-top: 4px;">
+                Kalman Filter Air Monitoring & Infection Risk Analytics
+            </p>
+        </div>
+        <div class="live-badge">
+            <div class="live-dot"></div>
+            LIVE SYNC ({datetime.now().strftime('%H:%M:%S')})
         </div>
     </div>
 """, unsafe_allow_html=True)
 
-# Metric Cards Row
+# Status Banner
+if wells_risk >= 5.0 or filtered_co2 >= 1000:
+    st.markdown(f"""
+        <div class="status-banner status-danger">
+            <span style="font-size: 1.4rem;">⚠️</span>
+            <div><b>경고: 즉시 환기가 필요합니다.</b> 오미크론 감염 위험도({wells_risk:.2f}%) 및 CO2 농도가 기준치를 초과했습니다.</div>
+        </div>
+    """, unsafe_allow_html=True)
+elif wells_risk >= 2.0 or filtered_co2 >= 800:
+    st.markdown(f"""
+        <div class="status-banner status-warn">
+            <span style="font-size: 1.4rem;">⚡</span>
+            <div><b>주의: 환기를 권장합니다.</b> CO2 수치 상승으로 인한 집중도 저하 위험이 있습니다.</div>
+        </div>
+    """, unsafe_allow_html=True)
+else:
+    st.markdown(f"""
+        <div class="status-banner status-good">
+            <span style="font-size: 1.4rem;">✨</span>
+            <div><b>최적 상태:</b> 실내 공기질 및 감염 안전 지수가 매우 우수합니다.</div>
+        </div>
+    """, unsafe_allow_html=True)
+
+# Metric Grid
 c1, c2, c3, c4, c5 = st.columns(5)
 
 with c1:
     st.markdown(f"""
         <div class="metric-card">
-            <div class="metric-label">CO2 (Kalman Filter)</div>
-            <div class="metric-value" style="color: #38BDF8;">{filtered_co2_val:.1f} <span style="font-size: 0.9rem;">ppm</span></div>
-            <div class="metric-sub">Raw: {raw_co2_val:.1f} ppm</div>
+            <div class="metric-title">CO2 (KALMAN)</div>
+            <div class="metric-val" style="color: #38BDF8;">{filtered_co2:.1f} <span style="font-size: 0.8rem; color: #64748B;">ppm</span></div>
+            <div class="metric-subtext">Raw: {raw_co2:.1f} ppm</div>
         </div>
     """, unsafe_allow_html=True)
 
 with c2:
     st.markdown(f"""
         <div class="metric-card">
-            <div class="metric-label">온도 (Temperature)</div>
-            <div class="metric-value" style="color: #F8FAFC;">{temp_val:.1f} <span style="font-size: 0.9rem;">°C</span></div>
-            <div class="metric-sub">적정: 20 ~ 24 °C</div>
+            <div class="metric-title">TEMPERATURE</div>
+            <div class="metric-val" style="color: #F9FAFC;">{temp_val:.1f} <span style="font-size: 0.8rem; color: #64748B;">°C</span></div>
+            <div class="metric-subtext">Target: 20~24°C</div>
         </div>
     """, unsafe_allow_html=True)
 
 with c3:
     st.markdown(f"""
         <div class="metric-card">
-            <div class="metric-label">습도 (Humidity)</div>
-            <div class="metric-value" style="color: #60A5FA;">{hum_val:.1f} <span style="font-size: 0.9rem;">%</span></div>
-            <div class="metric-sub">적정: 40 ~ 60 %</div>
+            <div class="metric-title">HUMIDITY</div>
+            <div class="metric-val" style="color: #60A5FA;">{hum_val:.1f} <span style="font-size: 0.8rem; color: #64748B;">%</span></div>
+            <div class="metric-subtext">Target: 40~60%</div>
         </div>
     """, unsafe_allow_html=True)
 
 with c4:
-    w_color = "#34D399" if wellness_score >= 70 else ("#FBBF24" if wellness_score >= 50 else "#F87171")
     st.markdown(f"""
         <div class="metric-card">
-            <div class="metric-label">웰니스 점수</div>
-            <div class="metric-value" style="color: {w_color};">{wellness_score:.1f} <span style="font-size: 0.9rem;">점</span></div>
-            <div class="metric-sub">종합 공기질 지표</div>
+            <div class="metric-title">WELLNESS SCORE</div>
+            <div class="metric-val" style="color: #34D399;">{wellness_score:.1f} <span style="font-size: 0.8rem; color: #64748B;">/100</span></div>
+            <div class="metric-subtext">Optimal Quality</div>
         </div>
     """, unsafe_allow_html=True)
 
 with c5:
-    r_color = "#F87171" if wells_riley_risk >= 5.0 else ("#FBBF24" if wells_riley_risk >= 2.0 else "#34D399")
+    risk_color = "#F87171" if wells_risk >= 5.0 else ("#FBBF24" if wells_risk >= 2.0 else "#34D399")
     st.markdown(f"""
         <div class="metric-card">
-            <div class="metric-label">Wells-Riley 감염률</div>
-            <div class="metric-value" style="color: {r_color};">{wells_riley_risk:.2f} <span style="font-size: 0.9rem;">%</span></div>
-            <div class="metric-sub">오미크론 ({num_people}명 기준)</div>
+            <div class="metric-title">INFECTION RISK</div>
+            <div class="metric-val" style="color: {risk_color};">{wells_risk:.2f} <span style="font-size: 0.8rem; color: #64748B;">%</span></div>
+            <div class="metric-subtext">Wells-Riley Model</div>
         </div>
     """, unsafe_allow_html=True)
 
 st.markdown("<br>", unsafe_allow_html=True)
 
-# ==========================================
-# 4. Interactive Time-Series Charts
-# ==========================================
-col_left, col_right = st.columns(2)
+# Charts Section
+g1, g2 = st.columns(2)
 
-with col_left:
-    st.markdown("### 📈 CO2 농도 추이 (Raw vs. Kalman Filter)")
+chart_theme = dict(
+    paper_bgcolor='rgba(0,0,0,0)',
+    plot_bgcolor='rgba(11, 15, 25, 0.6)',
+    font=dict(color='#64748B', family='Plus Jakarta Sans'),
+    margin=dict(l=10, r=10, t=25, b=10),
+    xaxis=dict(showgrid=True, gridcolor='#1E293B', zeroline=False),
+    yaxis=dict(showgrid=True, gridcolor='#1E293B', zeroline=False),
+    legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+)
+
+with g1:
+    st.markdown("<h4 style='font-size: 1rem; font-weight: 700; color: #E2E8F0;'>📈 CO2 Trend Analysis</h4>", unsafe_allow_html=True)
     fig_co2 = go.Figure()
-    
-    fig_co2.add_trace(go.Scatter(
-        x=df['Timestamp'], y=df['Raw_CO2'],
-        mode='lines', name='Raw (노이즈 포함)',
-        line=dict(color='#64748B', width=1.5, dash='dash')
-    ))
-    
-    fig_co2.add_trace(go.Scatter(
-        x=df['Timestamp'], y=df['Filtered_CO2'],
-        mode='lines', name='Filtered (칼만 필터)',
-        line=dict(color='#38BDF8', width=3)
-    ))
-    
-    fig_co2.update_layout(
-        paper_bgcolor='rgba(0,0,0,0)',
-        plot_bgcolor='#111827',
-        font=dict(color='#94A3B8'),
-        margin=dict(l=20, r=20, t=30, b=20),
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
-        xaxis=dict(showgrid=True, gridcolor='#1F2937'),
-        yaxis=dict(showgrid=True, gridcolor='#1F2937', title='CO2 (ppm)')
-    )
+    fig_co2.add_trace(go.Scatter(x=df['Timestamp'], y=df['Raw_CO2'], mode='lines', name='Raw', line=dict(color='#475569', width=1.5, dash='dot')))
+    fig_co2.add_trace(go.Scatter(x=df['Timestamp'], y=df['Filtered_CO2'], mode='lines', name='Kalman Filter', line=dict(color='#38BDF8', width=3)))
+    fig_co2.update_layout(**chart_theme)
     st.plotly_chart(fig_co2, use_container_width=True)
 
-with col_right:
-    st.markdown("### 🌡️ 온·습도 추이 (Temperature & Humidity)")
+with g2:
+    st.markdown("<h4 style='font-size: 1rem; font-weight: 700; color: #E2E8F0;'>🌡️ Temp & Humidity Realtime</h4>", unsafe_allow_html=True)
     fig_th = go.Figure()
-    
-    fig_th.add_trace(go.Scatter(
-        x=df['Timestamp'], y=df['Temperature'],
-        mode='lines', name='온도 (°C)',
-        line=dict(color='#F43F5E', width=2.5)
-    ))
-    
-    fig_th.add_trace(go.Scatter(
-        x=df['Timestamp'], y=df['Humidity'],
-        mode='lines', name='습도 (%)',
-        line=dict(color='#3B82F6', width=2.5)
-    ))
-    
-    fig_th.update_layout(
-        paper_bgcolor='rgba(0,0,0,0)',
-        plot_bgcolor='#111827',
-        font=dict(color='#94A3B8'),
-        margin=dict(l=20, r=20, t=30, b=20),
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
-        xaxis=dict(showgrid=True, gridcolor='#1F2937'),
-        yaxis=dict(showgrid=True, gridcolor='#1F2937')
-    )
+    fig_th.add_trace(go.Scatter(x=df['Timestamp'], y=df['Temperature'], mode='lines', name='Temp (°C)', line=dict(color='#F43F5E', width=2.5)))
+    fig_th.add_trace(go.Scatter(x=df['Timestamp'], y=df['Humidity'], mode='lines', name='Humidity (%)', line=dict(color='#3B82F6', width=2.5)))
+    fig_th.update_layout(**chart_theme)
     st.plotly_chart(fig_th, use_container_width=True)
+
+# Auto-Refresh Loop Trigger
+if auto_refresh:
+    time.sleep(refresh_sec)
+    st.rerun()
