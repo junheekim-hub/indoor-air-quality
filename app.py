@@ -6,7 +6,7 @@ from datetime import datetime
 import time
 
 # ==========================================
-# 0. Page Configuration & Custom CSS (Clean UI)
+# 0. Page Configuration & Custom CSS (Mobile Optimized & Tooltip Fixed)
 # ==========================================
 st.set_page_config(
     page_title="One-Health Dashboard",
@@ -35,6 +35,33 @@ st.markdown("""
     
     section[data-testid="stSidebar"] * {
         color: #94A3B8 !important;
+    }
+
+    /* 기본 사이드바 토글 버튼 숨기기 (깨짐 원인 차단) */
+    [data-testid="collapsedControl"] {
+        display: none !important;
+    }
+
+    /* 커스텀 사이드바 토글 아이콘 버튼 스타일 */
+    .custom-sidebar-toggle {
+        position: fixed;
+        top: 10px;
+        left: 10px;
+        z-index: 99999;
+        background: rgba(17, 24, 39, 0.85);
+        backdrop-filter: blur(8px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: #38BDF8;
+        padding: 6px 10px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 1rem;
+        font-weight: bold;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+    .custom-sidebar-toggle:hover {
+        background: rgba(30, 41, 59, 0.95);
+        color: #60A5FA;
     }
 
     /* Metric Cards */
@@ -95,6 +122,7 @@ st.markdown("""
         margin-bottom: 1.2rem;
         flex-wrap: wrap;
         gap: 10px;
+        padding-left: 35px; /* 커스텀 버튼 공간 확보 */
     }
     
     .live-badge {
@@ -133,6 +161,14 @@ st.markdown("""
 
     [data-testid="stHeader"] { background: transparent !important; }
 </style>
+
+<!-- 최상단 커스텀 사이드바 아이콘 버튼 (롤오버 글자 깨지 현상 원천 차단) -->
+<button class="custom-sidebar-toggle" onclick="
+    var toggleBtn = window.parent.document.querySelector('[data-testid=\\'collapsedControl\\']');
+    if (toggleBtn) { toggleBtn.click(); }
+">
+    ➔
+</button>
 """, unsafe_allow_html=True)
 
 try:
