@@ -6,7 +6,7 @@ from datetime import datetime
 import time
 
 # ==========================================
-# 0. Page Configuration & Custom CSS (Single Frame Layout)
+# 0. Page Configuration & Custom CSS (Fixed Panel & Mobile Optimized)
 # ==========================================
 st.set_page_config(
     page_title="One-Health Dashboard",
@@ -25,6 +25,41 @@ st.markdown("""
     .stApp {
         background: #030712;
         color: #F9FAFB;
+    }
+
+    /* 항상 펼쳐져 있는 고정형 컨트롤 패널 박스 */
+    .control-panel-box {
+        background: rgba(17, 24, 39, 0.85);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 16px;
+        padding: 1.2rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    }
+
+    .control-panel-title {
+        font-size: 0.9rem;
+        font-weight: 700;
+        color: #38BDF8;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    /* Streamlit 입력 요소 가독성 및 색상 강제 보정 */
+    div[data-baseweb="input"] input, div[data-baseweb="base-input"] {
+        background-color: #0B0F19 !important;
+        color: #F9FAFB !important;
+        border-color: rgba(255, 255, 255, 0.15) !important;
+    }
+    
+    /* 슬라이더 라벨 및 텍스트 색상 명확화 */
+    .stSlider label, .stCheckbox label, .stTextInput label {
+        color: #94A3B8 !important;
+        font-size: 0.8rem !important;
+        font-weight: 600 !important;
     }
 
     /* Metric Cards */
@@ -132,7 +167,7 @@ except Exception:
     current_code = "# app.py source code"
 
 # ==========================================
-# 1. Main Frame Header & Control Panel Expander
+# 1. Main Header & Always-Visible Control Panel
 # ==========================================
 st.markdown(f"""
     <div class="header-container">
@@ -151,7 +186,11 @@ st.markdown(f"""
     </div>
 """, unsafe_allow_html=True)
 
-with st.expander("⚙️ Control Panel & Settings", expanded=False):
+# 겹침 현상이 없는 깔끔한 고정형 컨트롤 패널 영역
+st.markdown('<div class="control-panel-title">⚙️ Control Panel & Settings</div>', unsafe_allow_html=True)
+
+with st.container():
+    st.markdown('<div class="control-panel-box">', unsafe_allow_html=True)
     col_c1, col_c2, col_c3 = st.columns(3)
     with col_c1:
         auto_refresh = st.checkbox("자동 새로고침", value=True)
@@ -163,6 +202,7 @@ with st.expander("⚙️ Control Panel & Settings", expanded=False):
         quanta_rate = st.slider("퀀타 방출률", min_value=500.0, max_value=2500.0, value=725.0, step=25.0)
         sheet_url = st.text_input("Google Sheet CSV URL", value="")
     
+    st.markdown("<br>", unsafe_allow_html=True)
     col_sb1, col_sb2 = st.columns(2)
     with col_sb1:
         if st.button("동기화", use_container_width=True):
@@ -176,8 +216,7 @@ with st.expander("⚙️ Control Panel & Settings", expanded=False):
             mime="text/x-python",
             use_container_width=True
         )
-
-st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
 
 # ==========================================
 # 2. Calculations & Live Data Generator
