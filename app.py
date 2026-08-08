@@ -6,13 +6,12 @@ from datetime import datetime
 import time
 
 # ==========================================
-# 0. Page Configuration & Custom CSS (Mobile Optimized & Tooltip Fixed)
+# 0. Page Configuration & Custom CSS (Single Frame Layout)
 # ==========================================
 st.set_page_config(
     page_title="One-Health Dashboard",
     page_icon="⚡",
-    layout="wide",
-    initial_sidebar_state="expanded"
+    layout="wide"
 )
 
 st.markdown("""
@@ -26,61 +25,6 @@ st.markdown("""
     .stApp {
         background: #030712;
         color: #F9FAFB;
-    }
-
-    section[data-testid="stSidebar"] {
-        background-color: #0B0F19 !important;
-        border-right: 1px solid #1E293B;
-    }
-    
-    section[data-testid="stSidebar"] * {
-        color: #94A3B8 !important;
-    }
-
-    /* 기본 사이드바 토글 버튼 숨기기 */
-    [data-testid="collapsedControl"] {
-        display: none !important;
-    }
-
-    /* 최상단 메인 영역 커스텀 사이드바 아이콘 버튼 */
-    .custom-sidebar-toggle {
-        position: fixed;
-        top: 10px;
-        left: 10px;
-        z-index: 99999;
-        background: rgba(17, 24, 39, 0.85);
-        backdrop-filter: blur(8px);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        color: #38BDF8;
-        padding: 6px 10px;
-        border-radius: 8px;
-        cursor: pointer;
-        font-size: 1rem;
-        font-weight: bold;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-    }
-    .custom-sidebar-toggle:hover {
-        background: rgba(30, 41, 59, 0.95);
-        color: #60A5FA;
-    }
-
-    /* 사이드바 내부 타이틀 영역 아이콘 스타일 */
-    .sidebar-header-btn {
-        background: rgba(255, 255, 255, 0.05);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        color: #38BDF8;
-        padding: 4px 10px;
-        border-radius: 6px;
-        cursor: pointer;
-        font-size: 0.9rem;
-        font-weight: bold;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-    }
-    .sidebar-header-btn:hover {
-        background: rgba(255, 255, 255, 0.1);
-        color: #60A5FA;
     }
 
     /* Metric Cards */
@@ -141,7 +85,6 @@ st.markdown("""
         margin-bottom: 1.2rem;
         flex-wrap: wrap;
         gap: 10px;
-        padding-left: 35px;
     }
     
     .live-badge {
@@ -180,14 +123,6 @@ st.markdown("""
 
     [data-testid="stHeader"] { background: transparent !important; }
 </style>
-
-<!-- 메인 영역 고정 토글 아이콘 버튼 -->
-<button class="custom-sidebar-toggle" onclick="
-    var toggleBtn = window.parent.document.querySelector('[data-testid=\\'collapsedControl\\']');
-    if (toggleBtn) { toggleBtn.click(); }
-">
-    ➔
-</button>
 """, unsafe_allow_html=True)
 
 try:
@@ -197,34 +132,40 @@ except Exception:
     current_code = "# app.py source code"
 
 # ==========================================
-# 1. Sidebar Controls
+# 1. Main Frame Header & Control Panel Expander
 # ==========================================
-with st.sidebar:
-    # 기존 '⚡ Control Panel' 텍스트를 아이콘 버튼 형태로 대체
-    st.markdown("""
-        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem;">
-            <span style="font-weight: 800; font-size: 0.95rem; color: #F9FAFB;">⚡ Control</span>
-            <button class="sidebar-header-btn" onclick="
-                var toggleBtn = window.parent.document.querySelector('[data-testid=\\'collapsedControl\\']');
-                if (toggleBtn) { toggleBtn.click(); }
-            ">⬅</button>
+st.markdown(f"""
+    <div class="header-container">
+        <div>
+            <h1 style="font-size: 1.4rem; font-weight: 800; color: #F9FAFC; margin: 0;">
+                Smart Classroom One-Health
+            </h1>
+            <p style="font-size: 0.78rem; color: #64748B; margin-top: 2px;">
+                Air Monitoring & Risk Analytics (Single Frame Mode)
+            </p>
         </div>
-    """, unsafe_allow_html=True)
-    st.markdown("---")
-    
-    auto_refresh = st.checkbox("자동 새로고침", value=True)
-    refresh_sec = st.slider("갱신 주기 (초)", min_value=2, max_value=30, value=5)
-    
-    st.markdown("---")
-    num_people = st.slider("재실 인원 (명)", min_value=1, max_value=50, value=30)
-    exposure_hours = st.slider("노출 시간 (시간)", min_value=0.5, max_value=12.0, value=6.0, step=0.5)
-    quanta_rate = st.slider("퀀타 방출률", min_value=500.0, max_value=2500.0, value=725.0, step=25.0)
-    
-    sheet_url = st.text_input("Google Sheet CSV URL", value="")
+        <div class="live-badge">
+            <div class="live-dot"></div>
+            LIVE
+        </div>
+    </div>
+""", unsafe_allow_html=True)
+
+with st.expander("⚙️ Control Panel & Settings", expanded=False):
+    col_c1, col_c2, col_c3 = st.columns(3)
+    with col_c1:
+        auto_refresh = st.checkbox("자동 새로고침", value=True)
+        refresh_sec = st.slider("갱신 주기 (초)", min_value=2, max_value=30, value=5)
+    with col_c2:
+        num_people = st.slider("재실 인원 (명)", min_value=1, max_value=50, value=30)
+        exposure_hours = st.slider("노출 시간 (시간)", min_value=0.5, max_value=12.0, value=6.0, step=0.5)
+    with col_c3:
+        quanta_rate = st.slider("퀀타 방출률", min_value=500.0, max_value=2500.0, value=725.0, step=25.0)
+        sheet_url = st.text_input("Google Sheet CSV URL", value="")
     
     col_sb1, col_sb2 = st.columns(2)
     with col_sb1:
-        if st.button("동기화"):
+        if st.button("동기화", use_container_width=True):
             st.cache_data.clear()
             st.rerun()
     with col_sb2:
@@ -232,8 +173,11 @@ with st.sidebar:
             label="소스 받기",
             data=current_code,
             file_name="app.py",
-            mime="text/x-python"
+            mime="text/x-python",
+            use_container_width=True
         )
+
+st.markdown("<br>", unsafe_allow_html=True)
 
 # ==========================================
 # 2. Calculations & Live Data Generator
@@ -338,25 +282,8 @@ well_st, well_tag, well_clr = get_wellness_status(wellness_score)
 risk_st, risk_tag, risk_clr = get_risk_status(wells_risk)
 
 # ==========================================
-# 4. UI Rendering (Mobile Responsive Grid)
+# 4. UI Rendering (Single Frame Grid)
 # ==========================================
-st.markdown(f"""
-    <div class="header-container">
-        <div>
-            <h1 style="font-size: 1.4rem; font-weight: 800; color: #F9FAFC; margin: 0;">
-                Smart Classroom One-Health
-            </h1>
-            <p style="font-size: 0.78rem; color: #64748B; margin-top: 2px;">
-                Air Monitoring & Risk Analytics
-            </p>
-        </div>
-        <div class="live-badge">
-            <div class="live-dot"></div>
-            LIVE
-        </div>
-    </div>
-""", unsafe_allow_html=True)
-
 if wells_risk >= 5.0 or filtered_co2 >= 1000:
     st.markdown(f"""<div class="status-banner status-danger"><span>⚠️</span><div><b>즉시 환기 필요</b> (위험도: {wells_risk:.2f}%)</div></div>""", unsafe_allow_html=True)
 elif wells_risk >= 2.0 or filtered_co2 >= 800:
