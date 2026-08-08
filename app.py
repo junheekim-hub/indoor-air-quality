@@ -85,6 +85,7 @@ st.markdown("""
         margin-top: 0.3rem;
         display: flex;
         justify-content: space-between;
+        align-items: center;
     }
 
     .header-container {
@@ -299,7 +300,6 @@ elif wells_risk >= 2.0 or filtered_co2 >= 800:
 else:
     st.markdown(f"""<div class="status-banner status-good"><span>✨</span><div><b>최적 상태 유지 중</b></div></div>""", unsafe_allow_html=True)
 
-# 모바일에서도 보기 좋게 2열 또는 1열로 유연하게 떨어지도록 설정
 cols = st.columns(2)
 
 metrics_data = [
@@ -322,7 +322,7 @@ for idx, (title, val, unit, st_txt, st_tag, st_clr, sub) in enumerate(metrics_da
                 <div class="metric-val" style="color: {st_clr};">{val} <span style="font-size: 0.75rem; color: #64748B;">{unit}</span></div>
                 <div class="metric-subtext">
                     <span>{sub}</span>
-                    <span>➔</span>
+                    <span style="font-size: 1.1rem; font-weight: bold; color: #38BDF8;">➔</span>
                 </div>
             </div>
         """, unsafe_allow_html=True)
