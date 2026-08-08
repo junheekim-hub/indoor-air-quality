@@ -6,7 +6,7 @@ from datetime import datetime
 import time
 
 # ==========================================
-# 0. Page Configuration & Custom CSS (Mobile Optimized)
+# 0. Page Configuration & Custom CSS (Clean UI)
 # ==========================================
 st.set_page_config(
     page_title="One-Health Dashboard",
@@ -37,7 +37,7 @@ st.markdown("""
         color: #94A3B8 !important;
     }
 
-    /* Metric Cards - Mobile Friendly Grid */
+    /* Metric Cards */
     .metric-card {
         background: rgba(17, 24, 39, 0.7);
         backdrop-filter: blur(12px);
