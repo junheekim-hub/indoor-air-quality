@@ -37,12 +37,12 @@ st.markdown("""
         color: #94A3B8 !important;
     }
 
-    /* 기본 사이드바 토글 버튼 숨기기 (깨짐 원인 차단) */
+    /* 기본 사이드바 토글 버튼 숨기기 */
     [data-testid="collapsedControl"] {
         display: none !important;
     }
 
-    /* 커스텀 사이드바 토글 아이콘 버튼 스타일 */
+    /* 최상단 메인 영역 커스텀 사이드바 아이콘 버튼 */
     .custom-sidebar-toggle {
         position: fixed;
         top: 10px;
@@ -61,6 +61,25 @@ st.markdown("""
     }
     .custom-sidebar-toggle:hover {
         background: rgba(30, 41, 59, 0.95);
+        color: #60A5FA;
+    }
+
+    /* 사이드바 내부 타이틀 영역 아이콘 스타일 */
+    .sidebar-header-btn {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: #38BDF8;
+        padding: 4px 10px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 0.9rem;
+        font-weight: bold;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .sidebar-header-btn:hover {
+        background: rgba(255, 255, 255, 0.1);
         color: #60A5FA;
     }
 
@@ -122,7 +141,7 @@ st.markdown("""
         margin-bottom: 1.2rem;
         flex-wrap: wrap;
         gap: 10px;
-        padding-left: 35px; /* 커스텀 버튼 공간 확보 */
+        padding-left: 35px;
     }
     
     .live-badge {
@@ -162,7 +181,7 @@ st.markdown("""
     [data-testid="stHeader"] { background: transparent !important; }
 </style>
 
-<!-- 최상단 커스텀 사이드바 아이콘 버튼 (롤오버 글자 깨지 현상 원천 차단) -->
+<!-- 메인 영역 고정 토글 아이콘 버튼 -->
 <button class="custom-sidebar-toggle" onclick="
     var toggleBtn = window.parent.document.querySelector('[data-testid=\\'collapsedControl\\']');
     if (toggleBtn) { toggleBtn.click(); }
@@ -181,7 +200,16 @@ except Exception:
 # 1. Sidebar Controls
 # ==========================================
 with st.sidebar:
-    st.markdown("### ⚡ Control Panel")
+    # 기존 '⚡ Control Panel' 텍스트를 아이콘 버튼 형태로 대체
+    st.markdown("""
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem;">
+            <span style="font-weight: 800; font-size: 0.95rem; color: #F9FAFB;">⚡ Control</span>
+            <button class="sidebar-header-btn" onclick="
+                var toggleBtn = window.parent.document.querySelector('[data-testid=\\'collapsedControl\\']');
+                if (toggleBtn) { toggleBtn.click(); }
+            ">⬅</button>
+        </div>
+    """, unsafe_allow_html=True)
     st.markdown("---")
     
     auto_refresh = st.checkbox("자동 새로고침", value=True)
