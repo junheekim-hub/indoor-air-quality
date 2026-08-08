@@ -6,10 +6,10 @@ from datetime import datetime
 import time
 
 # ==========================================
-# 0. Page Configuration & Custom CSS (High Contrast & Button Fix)
+# 0. Page Configuration & Custom CSS
 # ==========================================
 st.set_page_config(
-    page_title="One-Health Dashboard",
+    page_title="One-Health Classroom Dashboard",
     page_icon="⚡",
     layout="wide"
 )
@@ -27,12 +27,12 @@ st.markdown("""
         color: #F9FAFB;
     }
 
-    /* 모든 라벨 및 텍스트 가독성 대폭 강화 (흰색 계열) */
+    /* 모든 라벨 및 텍스트 가독성 강화 */
     label, .stCheckbox label, .stSlider label, .stTextInput label, p, span {
         color: #F1F5F9 !important;
     }
 
-    /* 버튼 스타일 강제 보정 (흰색 블록 현상 및 글자 숨김 해결) */
+    /* 버튼 스타일 강제 보정 */
     div.stButton > button, div.stDownloadButton > button {
         background-color: #1E293B !important;
         color: #38BDF8 !important;
@@ -171,7 +171,7 @@ st.markdown(f"""
                 Smart Classroom One-Health
             </h1>
             <p style="font-size: 0.78rem; color: #94A3B8; margin-top: 2px;">
-                Air Monitoring & Risk Analytics (Single Frame Mode)
+                Air Monitoring & Risk Analytics (DOH Standard Applied)
             </p>
         </div>
         <div class="live-badge">
@@ -263,8 +263,8 @@ def fetch_live_data():
     t_now = time.time()
     times = pd.date_range(end=datetime.now(), periods=30, freq='1min')
     base_co2 = 475 + 15 * np.sin(t_now / 10) + np.random.normal(0, 5, 30)
-    temp = 24.4 + 0.3 * np.cos(t_now / 20) + np.random.normal(0, 0.1, 30)
-    hum = 52.5 + 0.8 * np.sin(t_now / 15) + np.random.normal(0, 0.2, 30)
+    temp = 25.0 + 0.3 * np.cos(t_now / 20) + np.random.normal(0, 0.1, 30)
+    hum = 50.0 + 0.8 * np.sin(t_now / 15) + np.random.normal(0, 0.2, 30)
     
     df_sim = pd.DataFrame({'Timestamp': times, 'Raw_CO2': base_co2, 'Temperature': temp, 'Humidity': hum})
     df_sim['Filtered_CO2'] = apply_kalman_filter(df_sim['Raw_CO2'].values)
@@ -281,19 +281,22 @@ wells_risk = calculate_wells_riley(filtered_co2, num_people, exposure_hours, qua
 wellness_score = max(0.0, min(100.0, 100 - (filtered_co2 - 400) * 0.08))
 
 # ==========================================
-# 3. Status Helpers
+# 3. DOH Standards & Status Mapping Helpers
 # ==========================================
 def get_co2_status(val):
-    if val < 800: return ("좋음", "tag-good", "#38BDF8")
-    elif val < 1000: return ("보통", "tag-moderate", "#FBBF24")
-    else: return ("나쁨", "tag-danger", "#F87171")
+    # DOH 기준: 1000 ppm 이하 양호, 초과 시 환기 필요
+    if val < 800: return ("안전", "tag-good", "#38BDF8")
+    elif val <= 1000: return ("주의", "tag-moderate", "#FBBF24")
+    else: return ("위험(환기)", "tag-danger", "#F87171")
 
 def get_temp_status(val):
-    if 20.0 <= val <= 24.0: return ("적정", "tag-good", "#F9FAFC")
-    elif 18.0 <= val < 20.0 or 24.0 < val <= 26.0: return ("보통", "tag-moderate", "#FBBF24")
+    # 열대기후 교실 권장 온도: 24°C ~ 26°C
+    if 24.0 <= val <= 26.0: return ("적정", "tag-good", "#34D399")
+    elif 22.0 <= val < 24.0 or 26.0 < val <= 28.0: return ("보통", "tag-moderate", "#FBBF24")
     else: return ("부적절", "tag-danger", "#F87171")
 
 def get_hum_status(val):
+    # 권장 습도: 40% ~ 60%
     if 40.0 <= val <= 60.0: return ("적정", "tag-good", "#60A5FA")
     elif 30.0 <= val < 40.0 or 60.0 < val <= 70.0: return ("보통", "tag-moderate", "#FBBF24")
     else: return ("부적절", "tag-danger", "#F87171")
@@ -304,6 +307,7 @@ def get_wellness_status(val):
     else: return ("주의", "tag-danger", "#F87171")
 
 def get_risk_status(val):
+    # 웰스-라일리 분류: < 2% 안전 / 2%~5% 주의 / >= 5% 위험
     if val < 2.0: return ("안전", "tag-good", "#34D399")
     elif val < 5.0: return ("주의", "tag-moderate", "#FBBF24")
     else: return ("위험", "tag-danger", "#F87171")
@@ -317,21 +321,21 @@ risk_st, risk_tag, risk_clr = get_risk_status(wells_risk)
 # ==========================================
 # 4. UI Rendering (Single Frame Grid)
 # ==========================================
-if wells_risk >= 5.0 or filtered_co2 >= 1000:
-    st.markdown(f"""<div class="status-banner status-danger"><span>⚠️</span><div><b>즉시 환기 필요</b> (위험도: {wells_risk:.2f}%)</div></div>""", unsafe_allow_html=True)
+if wells_risk >= 5.0 or filtered_co2 > 1000:
+    st.markdown(f"""<div class="status-banner status-danger"><span>⚠️</span><div><b>즉시 환기 필요 (DOH 기준 초과)</b> — 감염 위험도: {wells_risk:.2f}% / CO2: {filtered_co2:.1f} ppm</div></div>""", unsafe_allow_html=True)
 elif wells_risk >= 2.0 or filtered_co2 >= 800:
-    st.markdown(f"""<div class="status-banner status-warn"><span>⚡</span><div><b>환기 권장</b> (CO2 상승)</div></div>""", unsafe_allow_html=True)
+    st.markdown(f"""<div class="status-banner status-warn"><span>⚡</span><div><b>환기 권장 (주의 구간 진입)</b> — 감염 위험도: {wells_risk:.2f}% / CO2: {filtered_co2:.1f} ppm</div></div>""", unsafe_allow_html=True)
 else:
-    st.markdown(f"""<div class="status-banner status-good"><span>✨</span><div><b>최적 상태 유지 중</b></div></div>""", unsafe_allow_html=True)
+    st.markdown(f"""<div class="status-banner status-good"><span>✨</span><div><b>교실 환경 최적 상태 유지 중 (DOH 기준 준수)</b></div></div>""", unsafe_allow_html=True)
 
 cols = st.columns(2)
 
 metrics_data = [
-    ("CO2 (KALMAN)", f"{filtered_co2:.1f}", "ppm", co2_st, co2_tag, co2_clr, f"Raw: {raw_co2:.1f}"),
-    ("TEMPERATURE", f"{temp_val:.1f}", "°C", temp_st, temp_tag, temp_clr, "적정: 20~24°C"),
-    ("HUMIDITY", f"{hum_val:.1f}", "%", hum_st, hum_tag, hum_clr, "적정: 40~60%"),
-    ("WELLNESS", f"{wellness_score:.1f}", "/100", well_st, well_tag, well_clr, "권장: 80점↑"),
-    ("INFECTION RISK", f"{wells_risk:.2f}", "%", risk_st, risk_tag, risk_clr, "기준: < 2.0%")
+    ("CO2 (KALMAN)", f"{filtered_co2:.1f}", "ppm", co2_st, co2_tag, co2_clr, "DOH 기준: < 1,000 ppm"),
+    ("TEMPERATURE", f"{temp_val:.1f}", "°C", temp_st, temp_tag, temp_clr, "권장 범위: 24~26°C"),
+    ("HUMIDITY", f"{hum_val:.1f}", "%", hum_st, hum_tag, hum_clr, "권장 범위: 40~60%"),
+    ("WELLNESS SCORE", f"{wellness_score:.1f}", "/100", well_st, well_tag, well_clr, "쾌적도 지수 (80점↑)"),
+    ("INFECTION RISK", f"{wells_risk:.2f}", "%", risk_st, risk_tag, risk_clr, "기준: <2%(안전) / 2~5%(주의) / ≥5%(위험)")
 ]
 
 for idx, (title, val, unit, st_txt, st_tag, st_clr, sub) in enumerate(metrics_data):
@@ -365,10 +369,11 @@ chart_theme = dict(
 
 plotly_clean_config = {'displayModeBar': False}
 
-st.markdown("<h4 style='font-size: 0.9rem; font-weight: 700; color: #F1F5F9;'>📈 CO2 Trend Analysis</h4>", unsafe_allow_html=True)
+st.markdown("<h4 style='font-size: 0.9rem; font-weight: 700; color: #F1F5F9;'>📈 CO2 Trend Analysis (DOH Threshold Line)</h4>", unsafe_allow_html=True)
 fig_co2 = go.Figure()
 fig_co2.add_trace(go.Scatter(x=df['Timestamp'], y=df['Raw_CO2'], mode='lines', name='Raw', line=dict(color='#64748B', width=1, dash='dot')))
 fig_co2.add_trace(go.Scatter(x=df['Timestamp'], y=df['Filtered_CO2'], mode='lines', name='Kalman', line=dict(color='#38BDF8', width=2.5)))
+fig_co2.add_hline(y=1000, line_dash="dash", line_color="#F87171", annotation_text="DOH Limit (1000 ppm)", annotation_position="bottom right")
 fig_co2.update_layout(**chart_theme)
 st.plotly_chart(fig_co2, use_container_width=True, config=plotly_clean_config)
 
