@@ -4,7 +4,6 @@ import numpy as np
 import plotly.graph_objects as go
 from datetime import datetime
 import requests
-import re
 
 # ==========================================
 # 0. Page Configuration
@@ -16,29 +15,63 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Custom CSS for Modern, Clean & Sleek UI
+# Custom CSS for Modern, Clean Blue & Slate UI
 st.markdown("""
 <style>
     @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
     
-    html, body, [class*="css"] {
-        font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+    * {
+        font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif !important;
     }
     
+    /* Main Background */
     .stApp {
-        background-color: #0F172A;
+        background-color: #0B0F19;
         color: #F8FAFC;
+    }
+    
+    /* Sidebar Styling & Visibility Fix */
+    section[data-testid="stSidebar"] {
+        background-color: #111827 !important;
+        border-right: 1px solid #1F2937;
+    }
+    section[data-testid="stSidebar"] * {
+        color: #E2E8F0 !important;
+    }
+    section[data-testid="stSidebar"] h1, 
+    section[data-testid="stSidebar"] h2, 
+    section[data-testid="stSidebar"] h3 {
+        color: #38BDF8 !important;
+    }
+    
+    /* Sidebar Input Fixes */
+    section[data-testid="stSidebar"] .stTextInput input {
+        background-color: #1F2937 !important;
+        color: #F8FAFC !important;
+        border: 1px solid #374151 !important;
+        border-radius: 8px;
+    }
+    section[data-testid="stSidebar"] .stButton button {
+        background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%) !important;
+        color: #FFFFFF !important;
+        border: none !important;
+        border-radius: 8px !important;
+        font-weight: 600 !important;
+        width: 100%;
+        transition: all 0.2s ease;
+    }
+    section[data-testid="stSidebar"] .stButton button:hover {
+        background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%) !important;
+        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
     }
     
     /* Header Styling */
     .header-title {
-        font-size: 1.8rem;
+        font-size: 2rem;
         font-weight: 800;
         letter-spacing: -0.02em;
-        background: linear-gradient(135deg, #38BDF8 0%, #818CF8 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        margin-bottom: 0.2rem;
+        color: #F8FAFC;
+        margin-bottom: 0.3rem;
     }
     .header-subtitle {
         font-size: 0.95rem;
@@ -48,24 +81,24 @@ st.markdown("""
     
     /* Metric Cards */
     .metric-card {
-        background: #1E293B;
-        border: 1px solid #334155;
+        background: #111827;
+        border: 1px solid #1F2937;
         border-radius: 12px;
         padding: 1.25rem;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
         transition: transform 0.2s, border-color 0.2s;
     }
     .metric-card:hover {
-        border-color: #38BDF8;
+        border-color: #3B82F6;
         transform: translateY(-2px);
     }
     .metric-label {
-        font-size: 0.85rem;
-        font-weight: 600;
+        font-size: 0.8rem;
+        font-weight: 700;
         color: #94A3B8;
         text-transform: uppercase;
         letter-spacing: 0.05em;
-        margin-bottom: 0.5rem;
+        margin-bottom: 0.4rem;
     }
     .metric-value {
         font-size: 1.8rem;
@@ -74,7 +107,7 @@ st.markdown("""
         line-height: 1.2;
     }
     .metric-sub {
-        font-size: 0.8rem;
+        font-size: 0.78rem;
         color: #64748B;
         margin-top: 0.3rem;
     }
@@ -82,46 +115,40 @@ st.markdown("""
     /* Nudge Banner */
     .nudge-container {
         border-radius: 12px;
-        padding: 1.25rem 1.5rem;
+        padding: 1.2rem 1.5rem;
         margin-bottom: 1.5rem;
         display: flex;
         align-items: center;
         gap: 1.2rem;
-        box-shadow: 0 10px 15px -3px rgba(0,0,0,0.3);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
     }
     .nudge-good {
-        background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(5, 150, 105, 0.25) 100%);
+        background: rgba(16, 185, 129, 0.08);
         border: 1px solid #10B981;
         color: #34D399;
     }
     .nudge-moderate {
-        background: linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(217, 119, 6, 0.25) 100%);
+        background: rgba(245, 158, 11, 0.08);
         border: 1px solid #F59E0B;
         color: #FBBF24;
     }
     .nudge-warning {
-        background: linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(220, 38, 38, 0.25) 100%);
+        background: rgba(239, 68, 68, 0.08);
         border: 1px solid #EF4444;
         color: #F87171;
     }
     .nudge-icon {
-        font-size: 2.8rem;
+        font-size: 2.2rem;
         line-height: 1;
     }
     .nudge-title {
-        font-size: 1.2rem;
+        font-size: 1.15rem;
         font-weight: 700;
         margin-bottom: 0.2rem;
     }
     .nudge-desc {
-        font-size: 0.9rem;
+        font-size: 0.88rem;
         opacity: 0.9;
-    }
-
-    /* Sidebar Styling */
-    section[data-testid="stSidebar"] {
-        background-color: #1E293B !important;
-        border-right: 1px solid #334155;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -130,12 +157,10 @@ st.markdown("""
 # 1. Sidebar Controls (Occupancy & Config)
 # ==========================================
 with st.sidebar:
-    st.image("https://img.icons8.com/isometric-folders/100/hospital.png", width=64)
-    st.title("⚙️ 설정 & 파라미터")
+    st.markdown("## ⚙️ 설정 & 파라미터")
     st.markdown("---")
     
-    st.subheader("👥 교실 점유 환경")
-    # Point 2: Occupancy default updated to 30.0 with user control
+    st.markdown("### 👥 교실 점유 환경")
     num_people = st.slider("재실 인원 (명)", min_value=1, max_value=50, value=30, step=1,
                            help="제안서 수치 기준: 학급당 약 30명")
     
@@ -143,8 +168,7 @@ with st.sidebar:
                              help="일일 교실 상주 시간 (기본 6시간)")
     
     st.markdown("---")
-    st.subheader("🦠 오미크론 변이 설정")
-    # Point 1: Quanta rate slider with Omicron range (725 ~ 2345)
+    st.markdown("### 🦠 오미크론 변이 설정")
     quanta_rate = st.slider("퀀타 방출률 (quanta/h)", min_value=500.0, max_value=2500.0, value=725.0, step=25.0,
                             help="오미크론 변이 퀀타 방출률: 725 ~ 2,345 quanta/h")
     
@@ -158,9 +182,8 @@ with st.sidebar:
         st.rerun()
 
 # ==========================================
-# 2. Data Processing Core (Safeguarded)
+# 2. Data Processing Core
 # ==========================================
-# Kalman Filter Implementation
 def apply_kalman_filter(data, process_variance=1e-3, measurement_variance=1e-1):
     n_iter = len(data)
     sz = (n_iter,)
@@ -182,20 +205,11 @@ def apply_kalman_filter(data, process_variance=1e-3, measurement_variance=1e-1):
         
     return xhat
 
-# Wells-Riley & Wellness Calculations
 def calculate_wells_riley(co2_ppm, num_people=30.0, exposure_hours=6.0, quanta_rate=725.0):
-    # Air exchange rate estimation based on CO2 level
-    # Base background CO2 ~ 400 ppm
     co2_diff = max(co2_ppm - 400.0, 10.0)
-    # Estimated ventilation rate per person (m3/h)
-    Qp = (0.018 * 3600) / (co2_diff / 1e6)  # Breathing rate ~0.018 m3/h
-    Qp = max(Qp, 5.0) # floor at minimum ventilation
-    
-    # Total room ventilation rate Q (m3/h)
+    Qp = (0.018 * 3600) / (co2_diff / 1e6)
+    Qp = max(Qp, 5.0)
     Q = Qp * num_people
-    
-    # Wells-Riley Equation: P = 1 - exp(-I * p * q * t / Q)
-    # I = 1 (infected person), p = 0.54 m3/h (pulmonary ventilation rate)
     p = 0.54
     I = 1.0
     exposure_prob = 1.0 - np.exp(-(I * p * quanta_rate * exposure_hours) / Q)
@@ -203,21 +217,14 @@ def calculate_wells_riley(co2_ppm, num_people=30.0, exposure_hours=6.0, quanta_r
     return min(risk_pct, 99.9)
 
 def calculate_wellness_score(co2, temp, humidity):
-    # Score out of 100
-    # CO2 penalty
     co2_score = max(0, 100 - (co2 - 400) * 0.08)
-    # Temp penalty (ideal 20-24C)
     temp_score = max(0, 100 - abs(temp - 22.0) * 5)
-    # Humidity penalty (ideal 40-60%)
     hum_score = max(0, 100 - abs(humidity - 50.0) * 1.5)
-    
     total = co2_score * 0.5 + temp_score * 0.25 + hum_score * 0.25
     return max(0.0, min(100.0, total))
 
-# Load Data Robustly (Point 4)
 @st.cache_data(ttl=10)
 def load_data():
-    # Simulated realistic baseline data if no URL or error
     times = pd.date_range(end=datetime.now(), periods=40, freq='2min')
     np.random.seed(42)
     raw_co2 = 550 + 80 * np.sin(np.linspace(0, 6, 40)) + np.random.normal(0, 15, 40)
@@ -236,10 +243,7 @@ def load_data():
         return df_sim
         
     try:
-        # Fetching Google Sheet CSV
         df = pd.read_csv(sheet_url)
-        
-        # Robust Column Mapping (Flexible matching)
         col_map = {}
         for col in df.columns:
             c_clean = str(col).strip().lower()
@@ -257,19 +261,16 @@ def load_data():
                 
         df = df.rename(columns=col_map)
         
-        # Korean Date String Parsing
         if 'Timestamp' in df.columns:
             def parse_korean_date(val):
                 try:
-                    val_str = str(val).strip()
-                    val_str = val_str.replace('오전', 'AM').replace('오후', 'PM')
+                    val_str = str(val).strip().replace('오전', 'AM').replace('오후', 'PM')
                     return pd.to_datetime(val_str)
                 except:
                     return pd.NaT
             df['Timestamp'] = df['Timestamp'].apply(parse_korean_date)
             df = df.dropna(subset=['Timestamp']).sort_values('Timestamp')
             
-        # Ensure CO2 columns exist
         if 'Raw_CO2' not in df.columns and 'Filtered_CO2' in df.columns:
             df['Raw_CO2'] = df['Filtered_CO2']
         elif 'Raw_CO2' in df.columns and 'Filtered_CO2' not in df.columns:
@@ -279,12 +280,11 @@ def load_data():
         if 'Humidity' not in df.columns: df['Humidity'] = 84.4
         
         return df if not df.empty else df_sim
-    except Exception as e:
+    except Exception:
         return df_sim
 
 df = load_data()
 
-# Calculate latest values safely
 try:
     latest = df.iloc[-1]
     raw_co2_val = float(latest.get('Raw_CO2', 600.0))
@@ -294,7 +294,6 @@ try:
 except Exception:
     raw_co2_val, filtered_co2_val, temp_val, hum_val = 597.0, 608.1, 26.8, 84.4
 
-# Calculate Wells-Riley & Wellness
 wells_riley_risk = calculate_wells_riley(filtered_co2_val, num_people, exposure_hours, quanta_rate)
 wellness_score = calculate_wellness_score(filtered_co2_val, temp_val, hum_val)
 
@@ -304,15 +303,13 @@ wellness_score = calculate_wellness_score(filtered_co2_val, temp_val, hum_val)
 
 # Title Banner
 st.markdown("""
-    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 1rem;">
-        <div>
-            <div class="header-title">🏫 Smart Classroom One-Health Platform</div>
-            <div class="header-subtitle">Data-to-Safety Pipeline | 실시간 공기질, 칼만 필터 및 Wells-Riley 오미크론 감염 위험도 대시보드</div>
-        </div>
+    <div>
+        <div class="header-title">🏫 Smart Classroom One-Health Platform</div>
+        <div class="header-subtitle">Data-to-Safety Pipeline | 실시간 공기질, 칼만 필터 및 Wells-Riley 오미크론 감염 위험도 대시보드</div>
     </div>
 """, unsafe_allow_html=True)
 
-# Point 3: Nudge Banner Implementation (Behavioral Intervention UI)
+# Nudge Banner
 if wells_riley_risk >= 5.0 or filtered_co2_val >= 1000:
     nudge_class = "nudge-warning"
     nudge_icon = "⚠️"
@@ -346,7 +343,7 @@ with c1:
     st.markdown(f"""
         <div class="metric-card">
             <div class="metric-label">CO2 (Kalman Filter)</div>
-            <div class="metric-value" style="color: #38BDF8;">{filtered_co2_val:.1f} <span style="font-size: 1rem;">ppm</span></div>
+            <div class="metric-value" style="color: #38BDF8;">{filtered_co2_val:.1f} <span style="font-size: 0.9rem;">ppm</span></div>
             <div class="metric-sub">Raw: {raw_co2_val:.1f} ppm</div>
         </div>
     """, unsafe_allow_html=True)
@@ -355,7 +352,7 @@ with c2:
     st.markdown(f"""
         <div class="metric-card">
             <div class="metric-label">온도 (Temperature)</div>
-            <div class="metric-value">{temp_val:.1f} <span style="font-size: 1rem;">°C</span></div>
+            <div class="metric-value" style="color: #F8FAFC;">{temp_val:.1f} <span style="font-size: 0.9rem;">°C</span></div>
             <div class="metric-sub">적정: 20 ~ 24 °C</div>
         </div>
     """, unsafe_allow_html=True)
@@ -364,29 +361,27 @@ with c3:
     st.markdown(f"""
         <div class="metric-card">
             <div class="metric-label">습도 (Humidity)</div>
-            <div class="metric-value">{hum_val:.1f} <span style="font-size: 1rem;">%</span></div>
+            <div class="metric-value" style="color: #60A5FA;">{hum_val:.1f} <span style="font-size: 0.9rem;">%</span></div>
             <div class="metric-sub">적정: 40 ~ 60 %</div>
         </div>
     """, unsafe_allow_html=True)
 
 with c4:
-    # Color condition for Wellness
     w_color = "#34D399" if wellness_score >= 70 else ("#FBBF24" if wellness_score >= 50 else "#F87171")
     st.markdown(f"""
         <div class="metric-card">
             <div class="metric-label">웰니스 점수</div>
-            <div class="metric-value" style="color: {w_color};">{wellness_score:.1f} <span style="font-size: 1rem;">점</span></div>
+            <div class="metric-value" style="color: {w_color};">{wellness_score:.1f} <span style="font-size: 0.9rem;">점</span></div>
             <div class="metric-sub">종합 공기질 지표</div>
         </div>
     """, unsafe_allow_html=True)
 
 with c5:
-    # Color condition for Wells-Riley
     r_color = "#F87171" if wells_riley_risk >= 5.0 else ("#FBBF24" if wells_riley_risk >= 2.0 else "#34D399")
     st.markdown(f"""
         <div class="metric-card">
             <div class="metric-label">Wells-Riley 감염률</div>
-            <div class="metric-value" style="color: {r_color};">{wells_riley_risk:.2f} <span style="font-size: 1rem;">%</span></div>
+            <div class="metric-value" style="color: {r_color};">{wells_riley_risk:.2f} <span style="font-size: 0.9rem;">%</span></div>
             <div class="metric-sub">오미크론 ({num_people}명 기준)</div>
         </div>
     """, unsafe_allow_html=True)
@@ -399,46 +394,42 @@ st.markdown("<br>", unsafe_allow_html=True)
 col_left, col_right = st.columns(2)
 
 with col_left:
-    st.subheader("📈 CO2 농도 추이 (Raw vs. Kalman Filter)")
+    st.markdown("### 📈 CO2 농도 추이 (Raw vs. Kalman Filter)")
     fig_co2 = go.Figure()
     
-    # Raw CO2 (Dashed Gray line)
     fig_co2.add_trace(go.Scatter(
         x=df['Timestamp'], y=df['Raw_CO2'],
         mode='lines', name='Raw (노이즈 포함)',
-        line=dict(color='#94A3B8', width=1.5, dash='dash')
+        line=dict(color='#64748B', width=1.5, dash='dash')
     ))
     
-    # Filtered CO2 (Vibrant Green/Blue line)
     fig_co2.add_trace(go.Scatter(
         x=df['Timestamp'], y=df['Filtered_CO2'],
         mode='lines', name='Filtered (칼만 필터)',
-        line=dict(color='#10B981', width=3)
+        line=dict(color='#38BDF8', width=3)
     ))
     
     fig_co2.update_layout(
         paper_bgcolor='rgba(0,0,0,0)',
-        plot_bgcolor='rgba(30,41,59,0.5)',
+        plot_bgcolor='#111827',
         font=dict(color='#94A3B8'),
         margin=dict(l=20, r=20, t=30, b=20),
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
-        xaxis=dict(showgrid=True, gridcolor='#334155'),
-        yaxis=dict(showgrid=True, gridcolor='#334155', title='CO2 (ppm)')
+        xaxis=dict(showgrid=True, gridcolor='#1F2937'),
+        yaxis=dict(showgrid=True, gridcolor='#1F2937', title='CO2 (ppm)')
     )
     st.plotly_chart(fig_co2, use_container_width=True)
 
 with col_right:
-    st.subheader("🌡️ 온·습도 추이 (Temperature & Humidity)")
+    st.markdown("### 🌡️ 온·습도 추이 (Temperature & Humidity)")
     fig_th = go.Figure()
     
-    # Temp
     fig_th.add_trace(go.Scatter(
         x=df['Timestamp'], y=df['Temperature'],
         mode='lines', name='온도 (°C)',
-        line=dict(color='#EF4444', width=2.5)
+        line=dict(color='#F43F5E', width=2.5)
     ))
     
-    # Humidity
     fig_th.add_trace(go.Scatter(
         x=df['Timestamp'], y=df['Humidity'],
         mode='lines', name='습도 (%)',
@@ -447,11 +438,11 @@ with col_right:
     
     fig_th.update_layout(
         paper_bgcolor='rgba(0,0,0,0)',
-        plot_bgcolor='rgba(30,41,59,0.5)',
+        plot_bgcolor='#111827',
         font=dict(color='#94A3B8'),
         margin=dict(l=20, r=20, t=30, b=20),
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
-        xaxis=dict(showgrid=True, gridcolor='#334155'),
-        yaxis=dict(showgrid=True, gridcolor='#334155')
+        xaxis=dict(showgrid=True, gridcolor='#1F2937'),
+        yaxis=dict(showgrid=True, gridcolor='#1F2937')
     )
     st.plotly_chart(fig_th, use_container_width=True)
