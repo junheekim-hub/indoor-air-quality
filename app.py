@@ -6,7 +6,7 @@ from datetime import datetime
 import time
 
 # ==========================================
-# 0. Page Configuration & Custom CSS (High Contrast & Button Fix)
+# 0. Page Configuration & Custom CSS (Fixed Panel & Mobile Optimized)
 # ==========================================
 st.set_page_config(
     page_title="One-Health Dashboard",
@@ -27,34 +27,39 @@ st.markdown("""
         color: #F9FAFB;
     }
 
-    /* 모든 라벨 및 텍스트 가독성 대폭 강화 (흰색 계열) */
-    label, .stCheckbox label, .stSlider label, .stTextInput label, p, span {
-        color: #F1F5F9 !important;
+    /* 항상 펼쳐져 있는 고정형 컨트롤 패널 박스 */
+    .control-panel-box {
+        background: rgba(17, 24, 39, 0.85);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 16px;
+        padding: 1.2rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
     }
 
-    /* 버튼 스타일 강제 보정 (흰색 블록 현상 및 글자 숨김 해결) */
-    div.stButton > button, div.stDownloadButton > button {
-        background-color: #1E293B !important;
-        color: #38BDF8 !important;
-        border: 1px solid rgba(56, 189, 248, 0.4) !important;
-        border-radius: 8px !important;
-        font-weight: 700 !important;
-        width: 100% !important;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
-    }
-    
-    div.stButton > button:hover, div.stDownloadButton > button:hover {
-        background-color: #334155 !important;
-        color: #60A5FA !important;
-        border-color: #60A5FA !important;
+    .control-panel-title {
+        font-size: 0.9rem;
+        font-weight: 700;
+        color: #38BDF8;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 8px;
     }
 
-    /* 텍스트 입력창 내부 색상 보정 */
-    div[data-baseweb="input"] input {
+    /* Streamlit 입력 요소 가독성 및 색상 강제 보정 */
+    div[data-baseweb="input"] input, div[data-baseweb="base-input"] {
         background-color: #0B0F19 !important;
         color: #F9FAFB !important;
-        -webkit-text-fill-color: #F9FAFB !important;
-        border-color: rgba(255, 255, 255, 0.2) !important;
+        border-color: rgba(255, 255, 255, 0.15) !important;
+    }
+    
+    /* 슬라이더 라벨 및 텍스트 색상 명확화 */
+    .stSlider label, .stCheckbox label, .stTextInput label {
+        color: #94A3B8 !important;
+        font-size: 0.8rem !important;
+        font-weight: 600 !important;
     }
 
     /* Metric Cards */
@@ -79,7 +84,7 @@ st.markdown("""
         font-size: 0.7rem;
         font-weight: 700;
         letter-spacing: 0.05em;
-        color: #94A3B8 !important;
+        color: #64748B;
         text-transform: uppercase;
     }
 
@@ -89,9 +94,9 @@ st.markdown("""
         padding: 2px 6px;
         border-radius: 4px;
     }
-    .tag-good { background: rgba(16, 185, 129, 0.15); color: #34D399 !important; border: 1px solid rgba(16, 185, 129, 0.3); }
-    .tag-moderate { background: rgba(245, 158, 11, 0.15); color: #FBBF24 !important; border: 1px solid rgba(245, 158, 11, 0.3); }
-    .tag-danger { background: rgba(239, 68, 68, 0.15); color: #F87171 !important; border: 1px solid rgba(239, 68, 68, 0.3); }
+    .tag-good { background: rgba(16, 185, 129, 0.15); color: #34D399; border: 1px solid rgba(16, 185, 129, 0.3); }
+    .tag-moderate { background: rgba(245, 158, 11, 0.15); color: #FBBF24; border: 1px solid rgba(245, 158, 11, 0.3); }
+    .tag-danger { background: rgba(239, 68, 68, 0.15); color: #F87171; border: 1px solid rgba(239, 68, 68, 0.3); }
 
     .metric-val {
         font-size: 1.6rem;
@@ -101,7 +106,7 @@ st.markdown("""
 
     .metric-subtext {
         font-size: 0.72rem;
-        color: #94A3B8 !important;
+        color: #475569;
         margin-top: 0.3rem;
         display: flex;
         justify-content: space-between;
@@ -123,7 +128,7 @@ st.markdown("""
         gap: 6px;
         background: rgba(16, 185, 129, 0.1);
         border: 1px solid rgba(16, 185, 129, 0.3);
-        color: #34D399 !important;
+        color: #34D399;
         padding: 4px 10px;
         border-radius: 15px;
         font-size: 0.75rem;
@@ -147,9 +152,9 @@ st.markdown("""
         gap: 0.8rem;
         font-size: 0.85rem;
     }
-    .status-good { background: rgba(16, 185, 129, 0.06); border: 1px solid rgba(16, 185, 129, 0.25); color: #34D399 !important; }
-    .status-warn { background: rgba(245, 158, 11, 0.06); border: 1px solid rgba(245, 158, 11, 0.25); color: #FBBF24 !important; }
-    .status-danger { background: rgba(239, 68, 68, 0.06); border: 1px solid rgba(239, 68, 68, 0.25); color: #F87171 !important; }
+    .status-good { background: rgba(16, 185, 129, 0.06); border: 1px solid rgba(16, 185, 129, 0.25); color: #34D399; }
+    .status-warn { background: rgba(245, 158, 11, 0.06); border: 1px solid rgba(245, 158, 11, 0.25); color: #FBBF24; }
+    .status-danger { background: rgba(239, 68, 68, 0.06); border: 1px solid rgba(239, 68, 68, 0.25); color: #F87171; }
 
     [data-testid="stHeader"] { background: transparent !important; }
 </style>
@@ -162,7 +167,7 @@ except Exception:
     current_code = "# app.py source code"
 
 # ==========================================
-# 1. Main Header & Control Panel
+# 1. Main Header & Always-Visible Control Panel
 # ==========================================
 st.markdown(f"""
     <div class="header-container">
@@ -170,7 +175,7 @@ st.markdown(f"""
             <h1 style="font-size: 1.4rem; font-weight: 800; color: #F9FAFC; margin: 0;">
                 Smart Classroom One-Health
             </h1>
-            <p style="font-size: 0.78rem; color: #94A3B8; margin-top: 2px;">
+            <p style="font-size: 0.78rem; color: #64748B; margin-top: 2px;">
                 Air Monitoring & Risk Analytics (Single Frame Mode)
             </p>
         </div>
@@ -181,9 +186,11 @@ st.markdown(f"""
     </div>
 """, unsafe_allow_html=True)
 
-with st.container(border=True):
-    st.markdown("<h4 style='font-size: 0.95rem; font-weight: 700; color: #38BDF8; margin-bottom: 10px;'>⚙️ Control Panel & Settings</h4>", unsafe_allow_html=True)
-    
+# 겹침 현상이 없는 깔끔한 고정형 컨트롤 패널 영역
+st.markdown('<div class="control-panel-title">⚙️ Control Panel & Settings</div>', unsafe_allow_html=True)
+
+with st.container():
+    st.markdown('<div class="control-panel-box">', unsafe_allow_html=True)
     col_c1, col_c2, col_c3 = st.columns(3)
     with col_c1:
         auto_refresh = st.checkbox("자동 새로고침", value=True)
@@ -195,7 +202,7 @@ with st.container(border=True):
         quanta_rate = st.slider("퀀타 방출률", min_value=500.0, max_value=2500.0, value=725.0, step=25.0)
         sheet_url = st.text_input("Google Sheet CSV URL", value="")
     
-    st.markdown("<div style='margin-top: 10px;'></div>", unsafe_allow_html=True)
+    st.markdown("<br>", unsafe_allow_html=True)
     col_sb1, col_sb2 = st.columns(2)
     with col_sb1:
         if st.button("동기화", use_container_width=True):
@@ -209,8 +216,7 @@ with st.container(border=True):
             mime="text/x-python",
             use_container_width=True
         )
-
-st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
 
 # ==========================================
 # 2. Calculations & Live Data Generator
@@ -343,7 +349,7 @@ for idx, (title, val, unit, st_txt, st_tag, st_clr, sub) in enumerate(metrics_da
                     <span class="metric-title">{title}</span>
                     <span class="status-tag {st_tag}">{st_txt}</span>
                 </div>
-                <div class="metric-val" style="color: {st_clr};">{val} <span style="font-size: 0.75rem; color: #94A3B8;">{unit}</span></div>
+                <div class="metric-val" style="color: {st_clr};">{val} <span style="font-size: 0.75rem; color: #64748B;">{unit}</span></div>
                 <div class="metric-subtext">
                     <span>{sub}</span>
                     <span style="font-size: 1.1rem; font-weight: bold; color: #38BDF8;">➔</span>
@@ -356,7 +362,7 @@ st.markdown("<br>", unsafe_allow_html=True)
 chart_theme = dict(
     paper_bgcolor='rgba(0,0,0,0)',
     plot_bgcolor='rgba(11, 15, 25, 0.6)',
-    font=dict(color='#94A3B8', family='Plus Jakarta Sans', size=10),
+    font=dict(color='#64748B', family='Plus Jakarta Sans', size=10),
     margin=dict(l=5, r=5, t=20, b=5),
     xaxis=dict(showgrid=True, gridcolor='#1E293B', zeroline=False),
     yaxis=dict(showgrid=True, gridcolor='#1E293B', zeroline=False),
@@ -365,14 +371,14 @@ chart_theme = dict(
 
 plotly_clean_config = {'displayModeBar': False}
 
-st.markdown("<h4 style='font-size: 0.9rem; font-weight: 700; color: #F1F5F9;'>📈 CO2 Trend Analysis</h4>", unsafe_allow_html=True)
+st.markdown("<h4 style='font-size: 0.9rem; font-weight: 700; color: #E2E8F0;'>📈 CO2 Trend Analysis</h4>", unsafe_allow_html=True)
 fig_co2 = go.Figure()
-fig_co2.add_trace(go.Scatter(x=df['Timestamp'], y=df['Raw_CO2'], mode='lines', name='Raw', line=dict(color='#64748B', width=1, dash='dot')))
+fig_co2.add_trace(go.Scatter(x=df['Timestamp'], y=df['Raw_CO2'], mode='lines', name='Raw', line=dict(color='#475569', width=1, dash='dot')))
 fig_co2.add_trace(go.Scatter(x=df['Timestamp'], y=df['Filtered_CO2'], mode='lines', name='Kalman', line=dict(color='#38BDF8', width=2.5)))
 fig_co2.update_layout(**chart_theme)
 st.plotly_chart(fig_co2, use_container_width=True, config=plotly_clean_config)
 
-st.markdown("<h4 style='font-size: 0.9rem; font-weight: 700; color: #F1F5F9; margin-top: 15px;'>🌡️ Temp & Humidity</h4>", unsafe_allow_html=True)
+st.markdown("<h4 style='font-size: 0.9rem; font-weight: 700; color: #E2E8F0; margin-top: 15px;'>🌡️ Temp & Humidity</h4>", unsafe_allow_html=True)
 fig_th = go.Figure()
 fig_th.add_trace(go.Scatter(x=df['Timestamp'], y=df['Temperature'], mode='lines', name='Temp', line=dict(color='#F43F5E', width=2)))
 fig_th.add_trace(go.Scatter(x=df['Timestamp'], y=df['Humidity'], mode='lines', name='Humidity', line=dict(color='#3B82F6', width=2)))
