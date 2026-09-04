@@ -167,7 +167,7 @@ st.markdown(f"""
                 Smart Classroom One-Health
             </h1>
             <p style="font-size: 0.78rem; color: #94A3B8; margin-top: 2px;">
-                Air Monitoring & Risk Analytics (DOH Standard Applied)
+                Air Monitoring & Risk Analytics (Dynamic Scaling)
             </p>
         </div>
         <div class="live-badge">
@@ -355,17 +355,16 @@ chart_theme = dict(
     font=dict(color='#94A3B8', family='Plus Jakarta Sans', size=10),
     margin=dict(l=5, r=5, t=20, b=5),
     xaxis=dict(showgrid=True, gridcolor='#1E293B', zeroline=False),
-    yaxis=dict(showgrid=True, gridcolor='#1E293B', zeroline=False),
+    yaxis=dict(showgrid=True, gridcolor='#1E293B', zeroline=False, autorange=True), # 자동 다이나믹 Y축 적용
     legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
 )
 
 plotly_clean_config = {'displayModeBar': False}
 
-st.markdown("<h4 style='font-size: 0.9rem; font-weight: 700; color: #F1F5F9;'>📈 CO2 Trend Analysis (DOH Threshold Line)</h4>", unsafe_allow_html=True)
+st.markdown("<h4 style='font-size: 0.9rem; font-weight: 700; color: #F1F5F9;'>📈 CO2 Trend Analysis (Dynamic Scale)</h4>", unsafe_allow_html=True)
 fig_co2 = go.Figure()
 fig_co2.add_trace(go.Scatter(x=df['Timestamp'], y=df['Raw_CO2'], mode='lines', name='Raw', line=dict(color='#64748B', width=1, dash='dot')))
 fig_co2.add_trace(go.Scatter(x=df['Timestamp'], y=df['Filtered_CO2'], mode='lines', name='Kalman', line=dict(color='#38BDF8', width=2.5)))
-fig_co2.add_hline(y=1000, line_dash="dash", line_color="#F87171", annotation_text="DOH Limit (1000 ppm)", annotation_position="bottom right")
 fig_co2.update_layout(**chart_theme)
 st.plotly_chart(fig_co2, use_container_width=True, config=plotly_clean_config)
 
